@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
 from quant_models.backtest import backtest_probability_signal, performance_metrics
 from quant_models.data import load_ohlcv
 from quant_models.features import build_trend_dataset

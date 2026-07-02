@@ -28,6 +28,12 @@ from quant_models.features import build_trend_dataset
 from quant_models.ml import walk_forward_classification
 from quant_models.ml_research import calibration_table, compare_walk_forward_models
 from quant_models.numerics import finite_difference_bvp, monte_carlo_integral
+from quant_models.nlp_retrieval import (
+    TfidfRetriever,
+    chunk_text,
+    retrieval_results_frame,
+    source_grounded_brief,
+)
 from quant_models.options import (
     asian_arithmetic_call_mc,
     black_scholes_call,
@@ -55,6 +61,7 @@ from quant_models.risk import (
     stress_scenario_table,
 )
 from quant_models.stochastic import simulate_gbm_euler_milstein
+from quant_models.time_series import ar1_fit, exponential_smoothing, kalman_local_level
 from quant_models.volatility import fit_garch11, volatility_regime_labels
 
 
@@ -423,6 +430,62 @@ def run_factor_and_volatility_models() -> dict[str, object]:
     }
 
 
+def run_time_series_and_retrieval_models() -> dict[str, object]:
+    ohlcv = load_ohlcv()
+    returns = ohlcv["close"].pct_change().dropna()
+    ar1 = ar1_fit(returns)
+    smooth = exponential_smoothing(returns, alpha=0.15)
+    kalman = kalman_local_level(returns)
+    diagnostics = pd.DataFrame(
+        [
+            {"metric": "ar1_phi", "value": ar1["phi"]},
+            {"metric": "ar1_half_life", "value": ar1["half_life"]},
+            {"metric": "ar1_residual_volatility", "value": ar1["residual_volatility"]},
+            {"metric": "exp_smoothing_last", "value": float(smooth.iloc[-1])},
+            {"metric": "kalman_level_last", "value": float(kalman["filtered_level"].iloc[-1])},
+        ]
+    )
+    diagnostics.to_csv(REPORT_DIR / "time_series_diagnostics.csv", index=False)
+    kalman.to_csv(REPORT_DIR / "kalman_local_level.csv", index_label="date")
+
+    plt.figure(figsize=(10, 4))
+    plt.plot(returns.index, returns.values, label="Daily return", alpha=0.45)
+    plt.plot(kalman.index, kalman["filtered_level"], label="Kalman local level")
+    plt.plot(smooth.index, smooth.values, label="Exponential smoothing")
+    plt.title("Time-series filters on daily returns")
+    plt.ylabel("Return")
+    plt.legend()
+    _save_plot(FIGURE_DIR / "time_series_filters.png")
+
+    sample_filing_text = """
+    The company faces liquidity risk if market conditions reduce access to credit facilities.
+    Management monitors cash balances, working capital requirements, and debt maturities.
+    Revenue increased because subscription demand and enterprise renewals improved during the year.
+    Gross margin may fluctuate due to cloud infrastructure cost, product mix, and foreign exchange.
+    Risk factors include cybersecurity incidents, supply chain disruption, regulatory changes,
+    concentration of customers, and uncertainty in macroeconomic conditions. The company invests
+    in controls, incident response, supplier diversification, and compliance monitoring to reduce
+    operational risk. Free cash flow is sensitive to billing seasonality and capital expenditure.
+    """
+    question = "What liquidity and operational risks are highlighted?"
+    chunks = chunk_text(sample_filing_text, chunk_words=45, overlap_words=10)
+    retrieval = TfidfRetriever().fit(chunks)
+    results = retrieval.query(question, top_k=3)
+    retrieval_results_frame(question, results).to_csv(REPORT_DIR / "retrieval_demo.csv", index=False)
+    brief = source_grounded_brief(question, results)
+    (REPORT_DIR / "retrieval_brief.md").write_text(
+        "# Source-Grounded Retrieval Demo\n\n"
+        f"Question: {question}\n\n"
+        f"Brief: {brief}\n",
+        encoding="utf-8",
+    )
+    return {
+        "ar1": ar1,
+        "retrieval_top_score": float(results[0].score),
+        "retrieval_chunks": float(len(chunks)),
+    }
+
+
 def run_numerical_examples() -> dict[str, object]:
     bvp = finite_difference_bvp(
         a=1.0,
@@ -494,6 +557,11 @@ def write_summary(metrics: dict[str, object]) -> None:
         f"- GARCH persistence alpha + beta: {metrics['factor_volatility']['garch']['persistence']:.3f}",
         f"- PCA variance explained by PC1/PC2: {metrics['factor_volatility']['pca_explained_variance_pc1']:.3f} / {metrics['factor_volatility']['pca_explained_variance_pc2']:.3f}",
         "",
+        "## Time-series and retrieval diagnostics",
+        "",
+        f"- AR(1) phi on daily returns: {metrics['time_series_retrieval']['ar1']['phi']:.3f}",
+        f"- Retrieval demo top TF-IDF score: {metrics['time_series_retrieval']['retrieval_top_score']:.3f}",
+        "",
         "Research code only. Results are historical and illustrative, not investment advice.",
         "",
     ]
@@ -510,6 +578,7 @@ def main() -> None:
         "portfolio": run_portfolio_model(),
         "options_and_simulation": run_option_and_simulation_models(),
         "factor_volatility": run_factor_and_volatility_models(),
+        "time_series_retrieval": run_time_series_and_retrieval_models(),
         "numerics": run_numerical_examples(),
     }
     (REPORT_DIR / "metrics.json").write_text(

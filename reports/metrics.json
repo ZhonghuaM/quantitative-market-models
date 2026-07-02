@@ -116,6 +116,16 @@
     },
     "worst_stress_loss": 0.12
   },
+  "time_series_retrieval": {
+    "ar1": {
+      "half_life": 0.34259569391139644,
+      "intercept": 0.00020567548039492805,
+      "phi": -0.13222872328531352,
+      "residual_volatility": 0.010616167653052426
+    },
+    "retrieval_chunks": 3.0,
+    "retrieval_top_score": 0.13458762804004876
+  },
   "trading": {
     "benchmark": {
       "annual_return": 0.07885061861612952,

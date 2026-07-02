@@ -8,8 +8,8 @@ jobs:
   python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Install package
@@ -19,16 +19,15 @@ jobs:
       - name: Regenerate reports
         run: python scripts/run_analysis.py
       - name: Secret string smoke test
-        run: |
-          ! grep -R -n -E 'olp_|gho_|git.overleaf.com' --exclude-dir=.git .
+        run: python scripts/secret_smoke_test.py
 
   cpp-js:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "24"
       - name: Compile C++ Monte Carlo pricer
         run: |
           c++ -std=c++17 -O3 cpp/monte_carlo_option.cpp -o /tmp/monte_carlo_option

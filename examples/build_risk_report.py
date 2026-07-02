@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
 from quant_models.data import close_to_close_returns, load_price_series
 from quant_models.risk import ewma_var_backtest, kupiec_pof_test, parametric_var_es
 

@@ -49,6 +49,18 @@ def download_sec_company_facts(cik: str, output: Path, user_agent: str) -> Path:
     return output
 
 
+def download_fred_series(series_id: str, output: Path) -> Path:
+    """Download a public FRED graph CSV without requiring an API key."""
+
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id.upper()}"
+    frame = pd.read_csv(url)
+    if frame.empty or "DATE" not in frame:
+        raise RuntimeError(f"No FRED data returned for {series_id}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(output, index=False)
+    return output
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -62,11 +74,17 @@ def main(argv: list[str] | None = None) -> None:
     sec.add_argument("--output", type=Path, default=ROOT / "data" / "downloaded" / "company_facts.json")
     sec.add_argument("--user-agent", default=DEFAULT_USER_AGENT)
 
+    fred = subparsers.add_parser("fred", help="Download a public FRED graph CSV")
+    fred.add_argument("--series", default="DGS10", help="FRED series id, for example DGS10")
+    fred.add_argument("--output", type=Path, default=ROOT / "data" / "downloaded" / "fred_dgs10.csv")
+
     args = parser.parse_args(argv)
     if args.command == "market":
         path = download_stooq_daily(args.symbol, args.output)
     elif args.command == "sec-facts":
         path = download_sec_company_facts(args.cik, args.output, args.user_agent)
+    elif args.command == "fred":
+        path = download_fred_series(args.series, args.output)
     else:
         raise AssertionError(args.command)
     print(f"Wrote {path}")

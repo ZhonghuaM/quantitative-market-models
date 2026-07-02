@@ -33,4 +33,9 @@ This run regenerates the repository reports from the bundled sample data.
 - GARCH persistence alpha + beta: 0.947
 - PCA variance explained by PC1/PC2: 0.407 / 0.213
 
+## Time-series and retrieval diagnostics
+
+- AR(1) phi on daily returns: -0.132
+- Retrieval demo top TF-IDF score: 0.135
+
 Research code only. Results are historical and illustrative, not investment advice.

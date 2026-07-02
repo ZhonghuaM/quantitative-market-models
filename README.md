@@ -31,6 +31,8 @@ This repository is built around one public portfolio identity: a scientific rese
 - Portfolio construction: equal weight, tangency, global minimum variance, risk parity, hierarchical risk parity, and CVaR minimization.
 - Derivatives: Black-Scholes, CRR binomial tree, Monte Carlo Asian option, implied volatility, and Greeks.
 - Volatility and factor diagnostics: GARCH(1,1)-style conditional volatility and PCA statistical factors.
+- Time-series research: AR(1), exponential smoothing, Kalman local-level filtering, and pairs-spread utilities.
+- AI/text analysis: source-grounded retrieval demo for filing-style risk text plus responsible-AI notes.
 - Multi-language examples in C++, JavaScript, R, and SQL.
 
 ## Quick Start
@@ -59,6 +61,7 @@ The bundled data is sufficient to run all tests and reports. Optional refresh ex
 
 ```bash
 python scripts/download_data.py market --symbol spy.us --output data/downloaded/spy_stooq.csv
+python scripts/download_data.py fred --series DGS10 --output data/downloaded/fred_dgs10.csv
 python scripts/download_data.py sec-facts --cik 0000320193 --output data/downloaded/apple_company_facts.json
 ```
 
@@ -75,6 +78,8 @@ Running `python scripts/run_analysis.py` writes:
 - `reports/stress_scenarios.csv` - scenario shocks and losses.
 - `reports/portfolio_summary.csv` - allocation method comparison.
 - `reports/option_greeks_surface.csv` - Black-Scholes Greek surface.
+- `reports/time_series_diagnostics.csv` - AR(1), smoothing, and Kalman diagnostics.
+- `reports/retrieval_demo.csv` - source-grounded retrieval example.
 - `reports/figures/` - regenerated PNG charts.
 
 ## Repository Layout
@@ -102,6 +107,8 @@ Running `python scripts/run_analysis.py` writes:
 - [Model cards](docs/model_cards.md)
 - [Assumptions and limitations](docs/assumptions_and_limitations.md)
 - [Architecture](docs/architecture.md)
+- [AI risk notes](docs/ai_risk_notes.md)
+- [Checklist against portfolio brief](docs/checklist_against_portfolio_brief.md)
 
 ## Tests and Code Quality
 

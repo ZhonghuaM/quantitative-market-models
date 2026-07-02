@@ -4,6 +4,8 @@ import pandas as pd
 from quant_models.backtest import backtest_probability_signal, performance_metrics
 from quant_models.factor_models import capm_regression, pca_statistical_factors
 from quant_models.features import build_trend_dataset
+from quant_models.macro import align_macro_to_market, fred_graph_csv_url
+from quant_models.nlp_retrieval import TfidfRetriever, chunk_text, source_grounded_brief
 from quant_models.options import (
     black_scholes_call,
     black_scholes_greeks,
@@ -20,6 +22,13 @@ from quant_models.portfolio import (
     tangency_portfolio,
 )
 from quant_models.risk import ewma_var_backtest, kupiec_pof_test, parametric_var_es
+from quant_models.time_series import (
+    ar1_fit,
+    exponential_smoothing,
+    kalman_local_level,
+    pairs_spread_signal,
+    regime_transition_matrix,
+)
 from quant_models.volatility import fit_garch11
 
 
@@ -125,3 +134,36 @@ def test_factor_and_volatility_helpers():
 
     garch = fit_garch11(benchmark)
     assert 0.0 <= garch["persistence"] < 0.999
+
+
+def test_time_series_helpers():
+    rng = np.random.default_rng(42)
+    index = pd.date_range("2020-01-01", periods=180)
+    base = pd.Series(np.cumsum(rng.normal(0, 1, len(index))), index=index)
+    hedge = base + pd.Series(rng.normal(0, 0.3, len(index)), index=index)
+    returns = base.diff().dropna()
+    ar1 = ar1_fit(returns)
+    smooth = exponential_smoothing(returns, alpha=0.2)
+    kalman = kalman_local_level(returns)
+    pair = pairs_spread_signal(base, hedge, window=30)
+    regimes = regime_transition_matrix(pd.Series(["low", "low", "high", "low"]))
+    assert "phi" in ar1
+    assert len(smooth) == len(returns)
+    assert "filtered_level" in kalman
+    assert not pair.empty
+    assert not regimes.empty
+
+
+def test_retrieval_and_macro_helpers():
+    text = "Liquidity risk affects credit access. Revenue growth came from renewals and demand."
+    chunks = chunk_text(text, chunk_words=6, overlap_words=2)
+    results = TfidfRetriever().fit(chunks).query("What affects liquidity risk?", top_k=1)
+    brief = source_grounded_brief("What affects liquidity risk?", results)
+    assert results[0].score > 0.0
+    assert "Liquidity" in brief or "liquidity" in brief
+    assert fred_graph_csv_url("DGS10").endswith("DGS10")
+
+    market = pd.DataFrame(index=pd.date_range("2024-01-01", periods=3, freq="D"))
+    macro = pd.Series([1.0, 2.0], index=pd.to_datetime(["2023-12-31", "2024-01-02"]), name="macro")
+    aligned = align_macro_to_market(market, macro)
+    assert aligned["macro"].tolist() == [1.0, 2.0, 2.0]
