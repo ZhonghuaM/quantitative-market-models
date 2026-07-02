@@ -1,0 +1,85 @@
+{
+  "numerics": {
+    "monte_carlo_integral_x2": {
+      "absolute_error": 0.009283230893903038,
+      "estimate": 8.67594989756057,
+      "exact": 8.666666666666666,
+      "samples": 100000.0,
+      "standard_error": 0.014718446405563948
+    }
+  },
+  "options_and_simulation": {
+    "asian_arithmetic_call_mc": {
+      "paths": 30000.0,
+      "price": 6.198752449563397,
+      "standard_error": 0.04945111962855348
+    },
+    "binomial_200_step": 10.44059125985994,
+    "black_scholes_call": 10.450583572185565
+  },
+  "portfolio": {
+    "global_minimum_variance": {
+      "Balanced": -0.006062729178980946,
+      "Defensive": 0.942670799965888,
+      "Growth": -0.04855812264516697,
+      "Income": 0.11195005185825986,
+      "expected_return": 0.016068885723515416,
+      "portfolio": "global_minimum_variance",
+      "volatility": 0.04858635789945374
+    },
+    "tangency": {
+      "Balanced": 1.4902493430754706,
+      "Defensive": -0.7459371100527658,
+      "Growth": 0.766257138765896,
+      "Income": -0.5105693717886008,
+      "expected_return": 0.3261302309882424,
+      "portfolio": "tangency",
+      "volatility": 0.3506653701427955
+    }
+  },
+  "risk": {
+    "confidence": 0.99,
+    "horizon_days": 10.0,
+    "kupiec": {
+      "breaches": 17.0,
+      "expected_breach_rate": 0.01,
+      "lr_statistic": 1.5523516743342327,
+      "observations": 1239.0,
+      "observed_breach_rate": 0.013720742534301856,
+      "p_value": 0.21278860559597945
+    },
+    "lambda": 0.94
+  },
+  "trading": {
+    "benchmark": {
+      "annual_return": 0.07885061861612952,
+      "annual_volatility": 0.14479789408602098,
+      "calmar": 0.439182145423379,
+      "max_drawdown": -0.1795396726342693,
+      "observations": 741.0,
+      "sharpe": 0.5445563909188227,
+      "total_return": 0.2500343917525818,
+      "win_rate": 0.5600539811066126
+    },
+    "end": "2023-05-18T00:00:00",
+    "exposure": 0.40215924426450744,
+    "model": {
+      "accuracy": 0.5263157894736842,
+      "balanced_accuracy": 0.5274410525537734,
+      "roc_auc": 0.5254342523468105
+    },
+    "rows": 741.0,
+    "start": "2020-06-15T00:00:00",
+    "strategy": {
+      "annual_return": 0.0665653334834535,
+      "annual_volatility": 0.09892501726758855,
+      "calmar": 0.41246161733765496,
+      "max_drawdown": -0.16138552215626134,
+      "observations": 741.0,
+      "sharpe": 0.6728867512188218,
+      "total_return": 0.20863862956939605,
+      "win_rate": 0.2388663967611336
+    },
+    "trades": 193.0
+  }
+}
