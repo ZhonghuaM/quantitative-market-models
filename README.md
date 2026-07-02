@@ -1,19 +1,39 @@
-# Quantitative Market Models
+# Quant AI Research Lab
 
-Reusable Python models for market analysis, risk measurement, derivative pricing, portfolio construction, and a walk-forward equity trading signal.
+A reproducible research platform for portfolio construction, risk analytics, derivatives pricing, volatility modeling, and ML-based financial signal research.
 
-The repository is designed as a clean research package rather than a notebook archive. It includes sample datasets, reusable modules under `src/quant_models`, an end-to-end analysis runner, generated reports, and tests.
+This repository is built around one public portfolio identity: a scientific researcher who can turn mathematical ideas into clean, tested, explainable software. It is intentionally package-first rather than notebook-first.
 
-## What is included
+## What It Demonstrates
 
-- Portfolio optimization: covariance construction, global minimum-variance portfolio, tangency portfolio, and sampled efficient-frontier diagnostics.
-- Risk analysis: historical return handling, EWMA volatility, 99% value-at-risk backtesting, and Kupiec breach-rate testing.
-- Derivatives: Black-Scholes European call pricing, CRR binomial convergence, and Monte Carlo arithmetic Asian call pricing.
-- Stochastic simulation: exact, Euler-Maruyama, and Milstein geometric Brownian motion paths.
-- Numerical methods: finite-difference boundary-value solver and plain Monte Carlo integration.
-- Trading model: engineered OHLCV features, expanding-window random-forest classification, probability-threshold signals, transaction costs, equity curves, and drawdown metrics.
+- Quantitative finance: portfolio optimization, risk parity, CVaR allocation, VaR, Expected Shortfall, stress testing, derivatives pricing, Greeks, stochastic simulation, and numerical methods.
+- Machine learning: baseline-first model comparison, walk-forward validation, feature engineering, calibration, feature importance, and no-lookahead backtesting.
+- Software engineering: Python package structure, type-hinted functions, tests, CI, Docker, Makefile, CLI scripts, and multi-language implementations.
+- Communication: recruiter summary, methodology notes, model cards, limitations, generated tables, and analyst-style figures.
 
-## Quick start
+## Example Outputs
+
+![Trading equity curve](reports/figures/trading_equity_curve.png)
+
+![Model calibration](reports/figures/calibration_curve.png)
+
+![Portfolio weights](reports/figures/portfolio_weights.png)
+
+![Option delta surface](reports/figures/option_delta_surface.png)
+
+## Main Features
+
+- Data ingestion and validation for bundled sample data plus optional public-data download scripts.
+- OHLCV feature engineering for time-series market prediction.
+- Walk-forward classifiers: naive baseline, logistic regression, linear SVM, histogram gradient boosting, and random forest.
+- Transaction-cost-aware long/flat backtesting with equity curves and drawdown.
+- EWMA VaR, rolling Expected Shortfall, Kupiec VaR backtest, and stress scenarios.
+- Portfolio construction: equal weight, tangency, global minimum variance, risk parity, hierarchical risk parity, and CVaR minimization.
+- Derivatives: Black-Scholes, CRR binomial tree, Monte Carlo Asian option, implied volatility, and Greeks.
+- Volatility and factor diagnostics: GARCH(1,1)-style conditional volatility and PCA statistical factors.
+- Multi-language examples in C++, JavaScript, R, and SQL.
+
+## Quick Start
 
 ```bash
 python -m venv .venv
@@ -23,40 +43,70 @@ python scripts/run_analysis.py
 pytest
 ```
 
-The analysis runner writes regenerated outputs to `reports/`:
+Or use the Makefile:
 
-- `reports/summary.md` - concise human-readable result summary.
+```bash
+make install
+make analysis
+make test
+make cpp
+make js
+```
+
+## Optional Data Downloads
+
+The bundled data is sufficient to run all tests and reports. Optional refresh examples:
+
+```bash
+python scripts/download_data.py market --symbol spy.us --output data/downloaded/spy_stooq.csv
+python scripts/download_data.py sec-facts --cik 0000320193 --output data/downloaded/apple_company_facts.json
+```
+
+SEC requests should use a real declared user-agent if you adapt the script for sustained use.
+
+## Generated Reports
+
+Running `python scripts/run_analysis.py` writes:
+
+- `reports/summary.md` - concise research summary.
 - `reports/metrics.json` - machine-readable metrics.
-- `reports/signal_backtest.csv` - out-of-sample predictions, positions, returns, and equity curves.
-- `reports/feature_importance.csv` - mean feature importances across walk-forward folds.
-- `reports/ewma_var_backtest.csv` - risk-model validation table.
-- `reports/portfolio_summary.csv` - tangency and minimum-variance portfolio diagnostics.
-- `reports/figures/` - publication-ready PNG figures.
+- `reports/model_comparison.csv` - baseline-first ML comparison.
+- `reports/signal_backtest.csv` - predictions, positions, returns, and equity curves.
+- `reports/stress_scenarios.csv` - scenario shocks and losses.
+- `reports/portfolio_summary.csv` - allocation method comparison.
+- `reports/option_greeks_surface.csv` - Black-Scholes Greek surface.
+- `reports/figures/` - regenerated PNG charts.
 
-## Repository layout
+## Repository Layout
 
 ```text
 .
+├── .github/workflows/ci.yml
+├── cpp/
 ├── data/
-│   ├── sp500_index.csv
-│   └── vas_equity_etf.csv
+├── docs/
+├── examples/
+├── javascript/
+├── r/
 ├── reports/
-│   └── figures/
 ├── scripts/
-│   └── run_analysis.py
-├── src/
-│   └── quant_models/
+├── sql/
+├── src/quant_models/
 └── tests/
 ```
 
-## Method notes
+## Documentation
 
-The trading model uses features available at date `t` to predict the close-to-close move from `t` to `t+1`. The out-of-sample evaluation uses an expanding training window with fixed test blocks, avoiding random shuffling of time-series observations.
+- [Recruiter summary](docs/recruiter_summary.md)
+- [Methodology](docs/methodology.md)
+- [Model cards](docs/model_cards.md)
+- [Assumptions and limitations](docs/assumptions_and_limitations.md)
+- [Architecture](docs/architecture.md)
 
-The default signal is long/flat:
+## Tests and Code Quality
 
-- Long when the predicted probability of an up day is at least `0.53`.
-- Flat otherwise.
-- Transaction cost is modeled as 5 basis points per unit of position turnover.
+The test suite covers option-pricing convergence, portfolio constraints, risk diagnostics, no-lookahead feature construction, and backtest metrics. GitHub Actions runs Python tests, regenerates reports, compiles the C++ Monte Carlo pricer, runs the JavaScript option pricer, and performs a basic secret-string smoke test.
 
-All results are historical and illustrative. This repository is research code, not investment advice.
+## Disclaimer
+
+This is a research and software portfolio project. Results are historical and hypothetical. Nothing here is investment advice or a live trading recommendation.

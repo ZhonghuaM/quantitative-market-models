@@ -26,6 +26,77 @@ def black_scholes_call(
     return float(spot * norm.cdf(d1) - strike * math.exp(-rate * maturity) * norm.cdf(d2))
 
 
+def black_scholes_put(
+    spot: float,
+    strike: float,
+    rate: float,
+    volatility: float,
+    maturity: float,
+) -> float:
+    """Black-Scholes value of a European put option."""
+
+    call = black_scholes_call(spot, strike, rate, volatility, maturity)
+    return float(call - spot + strike * math.exp(-rate * maturity))
+
+
+def black_scholes_greeks(
+    spot: float,
+    strike: float,
+    rate: float,
+    volatility: float,
+    maturity: float,
+) -> dict[str, float]:
+    """Black-Scholes Greeks for a European call option."""
+
+    if volatility <= 0.0 or maturity <= 0.0:
+        raise ValueError("volatility and maturity must be positive")
+    sqrt_t = math.sqrt(maturity)
+    d1 = (math.log(spot / strike) + (rate + 0.5 * volatility**2) * maturity) / (
+        volatility * sqrt_t
+    )
+    d2 = d1 - volatility * sqrt_t
+    return {
+        "delta": float(norm.cdf(d1)),
+        "gamma": float(norm.pdf(d1) / (spot * volatility * sqrt_t)),
+        "vega": float(spot * norm.pdf(d1) * sqrt_t / 100.0),
+        "theta": float(
+            (
+                -spot * norm.pdf(d1) * volatility / (2.0 * sqrt_t)
+                - rate * strike * math.exp(-rate * maturity) * norm.cdf(d2)
+            )
+            / 365.0
+        ),
+        "rho": float(strike * maturity * math.exp(-rate * maturity) * norm.cdf(d2) / 100.0),
+    }
+
+
+def implied_volatility_call(
+    market_price: float,
+    spot: float,
+    strike: float,
+    rate: float,
+    maturity: float,
+    lower: float = 1e-6,
+    upper: float = 5.0,
+    tolerance: float = 1e-8,
+    max_iter: int = 200,
+) -> float:
+    """Solve call implied volatility by bisection."""
+
+    low = lower
+    high = upper
+    for _ in range(max_iter):
+        mid = 0.5 * (low + high)
+        price = black_scholes_call(spot, strike, rate, mid, maturity)
+        if abs(price - market_price) < tolerance:
+            return float(mid)
+        if price < market_price:
+            low = mid
+        else:
+            high = mid
+    return float(0.5 * (low + high))
+
+
 def crr_binomial_call(
     spot: float,
     strike: float,

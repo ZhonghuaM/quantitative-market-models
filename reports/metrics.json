@@ -1,4 +1,15 @@
 {
+  "factor_volatility": {
+    "garch": {
+      "alpha": 0.14461353110134478,
+      "beta": 0.8026285232081993,
+      "log_likelihood": 4115.911689404264,
+      "omega": 5.002850460679331e-06,
+      "persistence": 0.9472420543095441
+    },
+    "pca_explained_variance_pc1": 0.4071079075737306,
+    "pca_explained_variance_pc2": 0.21341986834179796
+  },
   "numerics": {
     "monte_carlo_integral_x2": {
       "absolute_error": 0.009283230893903038,
@@ -15,9 +26,37 @@
       "standard_error": 0.04945111962855348
     },
     "binomial_200_step": 10.44059125985994,
-    "black_scholes_call": 10.450583572185565
+    "black_scholes_call": 10.450583572185565,
+    "greeks_at_the_money": {
+      "delta": 0.6368306511756191,
+      "gamma": 0.018762017345846895,
+      "rho": 0.5323248154537634,
+      "theta": -0.01757267820941972,
+      "vega": 0.3752403469169379
+    },
+    "implied_volatility_check": 0.1999999997600515
   },
   "portfolio": {
+    "cvar_minimization": {
+      "Balanced": 0.008612311571218561,
+      "Defensive": 0.7,
+      "Growth": 2.0799467038648826e-17,
+      "Income": 0.2913876884287815,
+      "expected_return": 0.0356889849256975,
+      "portfolio": "cvar_minimization",
+      "sharpe_proxy": 0.6235106419370118,
+      "volatility": 0.05723877432921645
+    },
+    "equal_weight": {
+      "Balanced": 0.25,
+      "Defensive": 0.25,
+      "Growth": 0.25,
+      "Income": 0.25,
+      "expected_return": 0.11,
+      "portfolio": "equal_weight",
+      "sharpe_proxy": 0.9057640471975549,
+      "volatility": 0.12144443173731763
+    },
     "global_minimum_variance": {
       "Balanced": -0.006062729178980946,
       "Defensive": 0.942670799965888,
@@ -25,7 +64,28 @@
       "Income": 0.11195005185825986,
       "expected_return": 0.016068885723515416,
       "portfolio": "global_minimum_variance",
+      "sharpe_proxy": 0.3307283447087949,
       "volatility": 0.04858635789945374
+    },
+    "hierarchical_risk_parity": {
+      "Balanced": 0.05030314240979681,
+      "Defensive": 0.8160973513391959,
+      "Growth": 0.03264389405356782,
+      "Income": 0.10095561219743944,
+      "expected_return": 0.037463090052787765,
+      "portfolio": "hierarchical_risk_parity",
+      "sharpe_proxy": 0.6858091137311819,
+      "volatility": 0.05462611870082592
+    },
+    "risk_parity": {
+      "Balanced": 0.138483410654731,
+      "Defensive": 0.5712371281140797,
+      "Growth": 0.09414016019947904,
+      "Income": 0.19613930103171015,
+      "expected_return": 0.06475503727260676,
+      "portfolio": "risk_parity",
+      "sharpe_proxy": 0.8590181440677633,
+      "volatility": 0.07538261877213455
     },
     "tangency": {
       "Balanced": 1.4902493430754706,
@@ -34,6 +94,7 @@
       "Income": -0.5105693717886008,
       "expected_return": 0.3261302309882424,
       "portfolio": "tangency",
+      "sharpe_proxy": 0.9300326144421901,
       "volatility": 0.3506653701427955
     }
   },
@@ -48,7 +109,12 @@
       "observed_breach_rate": 0.013720742534301856,
       "p_value": 0.21278860559597945
     },
-    "lambda": 0.94
+    "lambda": 0.94,
+    "parametric_var_es": {
+      "expected_shortfall": 0.05797766183093111,
+      "var": 0.04995074522477132
+    },
+    "worst_stress_loss": 0.12
   },
   "trading": {
     "benchmark": {
@@ -68,6 +134,43 @@
       "balanced_accuracy": 0.5274410525537734,
       "roc_auc": 0.5254342523468105
     },
+    "model_comparison": [
+      {
+        "accuracy": 0.5411605937921727,
+        "balanced_accuracy": 0.5226032966220711,
+        "brier_score": 0.26688648811208576,
+        "model": "hist_gradient_boosting",
+        "roc_auc": 0.5301574395742479
+      },
+      {
+        "accuracy": 0.5303643724696356,
+        "balanced_accuracy": 0.5307265873309188,
+        "brier_score": 0.2509400938550708,
+        "model": "random_forest",
+        "roc_auc": 0.5257003474018775
+      },
+      {
+        "accuracy": 0.5614035087719298,
+        "balanced_accuracy": 0.5015337423312883,
+        "brier_score": 0.246315802270309,
+        "model": "linear_svm",
+        "roc_auc": 0.5235641954320349
+      },
+      {
+        "accuracy": 0.5128205128205128,
+        "balanced_accuracy": 0.5134193214576096,
+        "brier_score": 0.252022594997722,
+        "model": "logistic_l2",
+        "roc_auc": 0.5134304087515708
+      },
+      {
+        "accuracy": 0.5600539811066126,
+        "balanced_accuracy": 0.5,
+        "brier_score": 0.4399460188933873,
+        "model": "naive_most_frequent",
+        "roc_auc": 0.5
+      }
+    ],
     "rows": 741.0,
     "start": "2020-06-15T00:00:00",
     "strategy": {

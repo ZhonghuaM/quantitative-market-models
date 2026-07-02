@@ -2,15 +2,25 @@ import numpy as np
 import pandas as pd
 
 from quant_models.backtest import backtest_probability_signal, performance_metrics
+from quant_models.factor_models import capm_regression, pca_statistical_factors
 from quant_models.features import build_trend_dataset
-from quant_models.options import black_scholes_call, crr_binomial_call
+from quant_models.options import (
+    black_scholes_call,
+    black_scholes_greeks,
+    crr_binomial_call,
+    implied_volatility_call,
+)
 from quant_models.portfolio import (
+    cvar_minimization_portfolio,
     default_asset_assumptions,
     global_minimum_variance_portfolio,
+    hierarchical_risk_parity_portfolio,
     portfolio_volatility,
+    risk_parity_portfolio,
     tangency_portfolio,
 )
-from quant_models.risk import ewma_var_backtest, kupiec_pof_test
+from quant_models.risk import ewma_var_backtest, kupiec_pof_test, parametric_var_es
+from quant_models.volatility import fit_garch11
 
 
 def test_crr_binomial_converges_to_black_scholes_call():
@@ -19,13 +29,34 @@ def test_crr_binomial_converges_to_black_scholes_call():
     assert abs(bs - crr) < 0.01
 
 
+def test_implied_volatility_and_greeks_are_consistent():
+    price = black_scholes_call(100, 100, 0.05, 0.2, 1)
+    implied = implied_volatility_call(price, 100, 100, 0.05, 1)
+    greeks = black_scholes_greeks(100, 100, 0.05, 0.2, 1)
+    assert abs(implied - 0.2) < 1e-5
+    assert 0.0 < greeks["delta"] < 1.0
+    assert greeks["gamma"] > 0.0
+
+
 def test_portfolio_weights_sum_to_one():
     expected_returns, covariance, _ = default_asset_assumptions()
     gmv = global_minimum_variance_portfolio(covariance)
     tangency = tangency_portfolio(expected_returns, covariance, risk_free_rate=0.01)
+    risk_parity = risk_parity_portfolio(covariance)
+    hrp = hierarchical_risk_parity_portfolio(covariance)
     assert np.isclose(gmv.sum(), 1.0)
     assert np.isclose(tangency.sum(), 1.0)
+    assert np.isclose(risk_parity.sum(), 1.0)
+    assert np.isclose(hrp.sum(), 1.0)
     assert portfolio_volatility(gmv, covariance) > 0.0
+
+
+def test_cvar_minimization_returns_long_only_weights():
+    rng = np.random.default_rng(42)
+    scenarios = pd.DataFrame(rng.normal(0.001, 0.02, size=(300, 4)))
+    weights = cvar_minimization_portfolio(scenarios, confidence=0.95)
+    assert np.isclose(weights.sum(), 1.0)
+    assert (weights >= -1e-8).all()
 
 
 def test_build_trend_dataset_uses_forward_return():
@@ -69,3 +100,28 @@ def test_ewma_var_backtest_and_kupiec():
     test = kupiec_pof_test(var_frame["breach"], expected_probability=0.01)
     assert len(var_frame) > 0
     assert 0.0 <= test["observed_breach_rate"] <= 1.0
+    parametric = parametric_var_es(returns, horizon=5)
+    assert parametric["var"] > 0.0
+    assert parametric["expected_shortfall"] > parametric["var"]
+
+
+def test_factor_and_volatility_helpers():
+    rng = np.random.default_rng(42)
+    index = pd.date_range("2020-01-01", periods=250)
+    benchmark = pd.Series(rng.normal(0, 0.01, 250), index=index)
+    asset = 0.0002 + 1.4 * benchmark + pd.Series(rng.normal(0, 0.005, 250), index=index)
+    capm = capm_regression(asset, benchmark)
+    assert 1.0 < capm["beta"] < 1.8
+
+    returns = pd.DataFrame(
+        {
+            "a": benchmark,
+            "b": asset,
+            "c": pd.Series(rng.normal(0, 0.012, 250), index=index),
+        }
+    )
+    _, loadings = pca_statistical_factors(returns, n_components=2)
+    assert "explained_variance_ratio" in loadings.index
+
+    garch = fit_garch11(benchmark)
+    assert 0.0 <= garch["persistence"] < 0.999

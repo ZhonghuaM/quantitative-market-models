@@ -26,6 +26,60 @@ def historical_expected_shortfall(returns: pd.Series, confidence: float = 0.99) 
     return float(tail_losses.mean())
 
 
+def parametric_var_es(
+    returns: pd.Series,
+    confidence: float = 0.99,
+    horizon: int = 1,
+) -> dict[str, float]:
+    """Normal parametric VaR and Expected Shortfall as positive loss numbers."""
+
+    clean = returns.dropna()
+    mu = float(clean.mean() * horizon)
+    sigma = float(clean.std(ddof=1) * math.sqrt(horizon))
+    z = norm.ppf(confidence)
+    var = -(mu - z * sigma)
+    es = -(mu - sigma * norm.pdf(z) / (1.0 - confidence))
+    return {"var": float(var), "expected_shortfall": float(es)}
+
+
+def rolling_expected_shortfall(
+    returns: pd.Series,
+    confidence: float = 0.99,
+    window: int = 252,
+) -> pd.Series:
+    """Rolling historical expected shortfall."""
+
+    def _tail(series: pd.Series) -> float:
+        var = -series.quantile(1.0 - confidence)
+        losses = -series[series <= -var]
+        return float(losses.mean()) if len(losses) else float(var)
+
+    es = returns.dropna().rolling(window).apply(_tail, raw=False)
+    es.name = f"rolling_es_{int(confidence * 100)}"
+    return es.dropna()
+
+
+def stress_scenario_table(
+    returns: pd.Series,
+    scenarios: dict[str, float] | None = None,
+) -> pd.DataFrame:
+    """Apply simple shock scenarios to a representative one-day return distribution."""
+
+    clean = returns.dropna()
+    base = {
+        "median_day": float(clean.median()),
+        "one_sigma_down": float(clean.mean() - clean.std(ddof=1)),
+        "historical_5pct": float(clean.quantile(0.05)),
+        "historical_1pct": float(clean.quantile(0.01)),
+    }
+    if scenarios:
+        base.update(scenarios)
+    frame = pd.DataFrame(
+        [{"scenario": name, "return_shock": shock, "loss": -shock} for name, shock in base.items()]
+    )
+    return frame.sort_values("loss", ascending=False).reset_index(drop=True)
+
+
 def ewma_volatility(returns: pd.Series, lambda_: float = 0.94) -> pd.Series:
     """RiskMetrics-style EWMA volatility estimate."""
 
