@@ -1,11 +1,16 @@
-#!/usr/bin/env python
-"""Run the full quantitative-model analysis pipeline."""
+"""Evaluate a daily OHLCV signal, with optional supplementary worked examples."""
 
 from __future__ import annotations
 
+import argparse
+import hashlib
+import importlib.metadata
 import json
 import math
+import platform
+import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib
@@ -25,15 +30,20 @@ from quant_models.backtest import backtest_probability_signal, performance_metri
 from quant_models.data import close_to_close_returns, load_ohlcv, load_price_series
 from quant_models.factor_models import pca_statistical_factors
 from quant_models.features import build_trend_dataset
-from quant_models.ml import walk_forward_classification
-from quant_models.ml_research import calibration_table, compare_walk_forward_models
-from quant_models.numerics import finite_difference_bvp, monte_carlo_integral
+from quant_models.ml_research import (
+    baseline_model_zoo,
+    calibration_table,
+    evaluate_walk_forward_models,
+    paired_brier_block_bootstrap,
+    summarise_model_predictions,
+)
 from quant_models.nlp_retrieval import (
     TfidfRetriever,
     chunk_text,
     retrieval_results_frame,
     source_grounded_brief,
 )
+from quant_models.numerics import finite_difference_bvp, monte_carlo_integral
 from quant_models.options import (
     asian_arithmetic_call_mc,
     black_scholes_call,
@@ -64,9 +74,25 @@ from quant_models.stochastic import simulate_gbm_euler_milstein
 from quant_models.time_series import ar1_fit, exponential_smoothing, kalman_local_level
 from quant_models.volatility import fit_garch11, volatility_regime_labels
 
-
 REPORT_DIR = ROOT / "reports"
 FIGURE_DIR = REPORT_DIR / "figures"
+SIGNAL_CONFIG = {
+    "train_size": 504,
+    "test_size": 63,
+    "random_state": 42,
+    "trading_model": "random_forest",
+    "long_threshold": 0.53,
+    "short_threshold": 0.47,
+    "allow_short": False,
+    "transaction_cost_bps": 5.0,
+    "execution_delay": 1,
+    "bootstrap_baseline": "training_frequency",
+    "bootstrap_block_sizes": [10, 20],
+    "bootstrap_repetitions": 1000,
+    "annual_factor": 252,
+    "risk_free_rate": 0.0,
+    "study_status": "exploratory; no untouched final holdout",
+}
 
 
 def _json_ready(value):
@@ -75,7 +101,9 @@ def _json_ready(value):
     if isinstance(value, list):
         return [_json_ready(inner) for inner in value]
     if isinstance(value, (np.floating, np.integer)):
-        return float(value)
+        return _json_ready(float(value))
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
     if isinstance(value, pd.Timestamp):
         return value.isoformat()
     return value
@@ -95,45 +123,100 @@ def _save_plot(path: Path) -> None:
 def run_trading_model() -> dict[str, object]:
     ohlcv = load_ohlcv()
     dataset, features = build_trend_dataset(ohlcv)
-    result = walk_forward_classification(
+    expected_index = ohlcv.loc[dataset.index[0] : dataset.index[-1]].index
+    if not dataset.index.equals(expected_index):
+        raise ValueError(
+            "Feature filtering creates gaps: one-row execution delay requires consecutive observations"
+        )
+    results = evaluate_walk_forward_models(
         dataset,
         features,
-        train_size=504,
-        test_size=63,
+        train_size=SIGNAL_CONFIG["train_size"],
+        test_size=SIGNAL_CONFIG["test_size"],
+        random_state=SIGNAL_CONFIG["random_state"],
     )
+    result = results[SIGNAL_CONFIG["trading_model"]]
+    metric_args = {key: SIGNAL_CONFIG[key] for key in ("annual_factor", "risk_free_rate")}
+    backtest_args = {
+        key: SIGNAL_CONFIG[key]
+        for key in (
+            "long_threshold",
+            "short_threshold",
+            "allow_short",
+            "transaction_cost_bps",
+        )
+    }
     backtest = backtest_probability_signal(
         result.predictions,
-        long_threshold=0.53,
-        short_threshold=0.47,
-        allow_short=False,
-        transaction_cost_bps=5.0,
+        **backtest_args,
+        execution_delay=SIGNAL_CONFIG["execution_delay"],
     )
-
+    same_close = backtest_probability_signal(result.predictions, **backtest_args, execution_delay=0)
     backtest.to_csv(REPORT_DIR / "signal_backtest.csv", index_label="date")
+    pd.concat({name: r.predictions for name, r in results.items()}, names=["model", "date"]).to_csv(
+        REPORT_DIR / "predictions.csv"
+    )
     result.feature_importance.to_csv(REPORT_DIR / "feature_importance.csv", header=["importance"])
-    model_comparison = compare_walk_forward_models(dataset, features, train_size=504, test_size=126)
+    model_comparison = summarise_model_predictions(results)
     model_comparison.to_csv(REPORT_DIR / "model_comparison.csv", index=False)
+    uncertainty = pd.DataFrame(
+        [
+            {
+                "model": SIGNAL_CONFIG["trading_model"],
+                "baseline": SIGNAL_CONFIG["bootstrap_baseline"],
+                **paired_brier_block_bootstrap(
+                    result.predictions,
+                    results[SIGNAL_CONFIG["bootstrap_baseline"]].predictions,
+                    block_size=block,
+                    repetitions=SIGNAL_CONFIG["bootstrap_repetitions"],
+                    random_state=SIGNAL_CONFIG["random_state"],
+                ),
+            }
+            for block in SIGNAL_CONFIG["bootstrap_block_sizes"]
+        ]
+    )
+    uncertainty.to_csv(REPORT_DIR / "prediction_uncertainty.csv", index=False)
+    comparisons = pd.DataFrame(
+        [
+            {
+                "execution": label,
+                **performance_metrics(frame["strategy_return"], **metric_args),
+                "average_exposure": float(frame["position"].abs().mean()),
+            }
+            for label, frame in [("same_close_diagnostic", same_close), ("next_close", backtest)]
+        ]
+    )
+    comparisons.to_csv(REPORT_DIR / "execution_comparison.csv", index=False)
     calibration = calibration_table(result.predictions)
     calibration.to_csv(REPORT_DIR / "calibration_table.csv", index=False)
 
-    strategy_metrics = performance_metrics(backtest["strategy_return"])
-    benchmark_metrics = performance_metrics(backtest["benchmark_return"])
+    strategy_metrics = performance_metrics(backtest["strategy_return"], **metric_args)
+    benchmark_metrics = performance_metrics(backtest["benchmark_return"], **metric_args)
     exposure = float((backtest["position"].abs() > 0.0).mean())
     trades = float(backtest["position"].diff().abs().fillna(backtest["position"].abs()).sum())
 
     plt.figure(figsize=(10, 5))
-    plt.plot(backtest.index, backtest["strategy_equity"], label="ML signal")
+    plt.plot(backtest.index, backtest["strategy_equity"], label="Signal: next-close execution")
     plt.plot(backtest.index, backtest["benchmark_equity"], label="Buy and hold")
-    plt.title("Walk-forward trading equity curve")
+    plt.plot(
+        same_close.index,
+        same_close["strategy_equity"],
+        label="Same-close diagnostic",
+        linestyle="--",
+        alpha=0.7,
+    )
+    plt.title("Execution timing sensitivity | exploratory OHLCV study")
     plt.ylabel("Growth of 1.00")
+    plt.xlabel("Return-start date (wealth realised at next observed close)")
     plt.legend()
     _save_plot(FIGURE_DIR / "trading_equity_curve.png")
 
     plt.figure(figsize=(10, 4))
-    plt.plot(backtest.index, backtest["strategy_drawdown"], label="ML signal")
+    plt.plot(backtest.index, backtest["strategy_drawdown"], label="Signal: next-close execution")
     plt.plot(backtest.index, backtest["benchmark_drawdown"], label="Buy and hold")
     plt.title("Drawdown comparison")
     plt.ylabel("Drawdown")
+    plt.xlabel("Return-start date")
     plt.legend()
     _save_plot(FIGURE_DIR / "trading_drawdown.png")
 
@@ -173,6 +256,9 @@ def run_trading_model() -> dict[str, object]:
     return {
         "model": result.metrics,
         "model_comparison": model_comparison.to_dict(orient="records"),
+        "execution_comparison": comparisons.to_dict(orient="records"),
+        "prediction_uncertainty": uncertainty.to_dict(orient="records"),
+        "configuration": SIGNAL_CONFIG,
         "strategy": strategy_metrics,
         "benchmark": benchmark_metrics,
         "exposure": exposure,
@@ -186,7 +272,7 @@ def run_trading_model() -> dict[str, object]:
 def run_risk_model() -> dict[str, object]:
     sp500 = load_price_series()
     returns = close_to_close_returns(sp500)
-    var_frame = ewma_var_backtest(returns, confidence=0.99, horizon=10, lambda_=0.94)
+    var_frame = ewma_var_backtest(returns, confidence=0.99, horizon=1, lambda_=0.94)
     var_frame.to_csv(REPORT_DIR / "ewma_var_backtest.csv", index_label="date")
     kupiec = kupiec_pof_test(var_frame["breach"], expected_probability=0.01)
     parametric = parametric_var_es(returns, confidence=0.99, horizon=10)
@@ -203,7 +289,7 @@ def run_risk_model() -> dict[str, object]:
     rolling_es.to_csv(REPORT_DIR / "rolling_expected_shortfall.csv", header=["expected_shortfall"])
 
     plt.figure(figsize=(10, 5))
-    plt.plot(var_frame.index, var_frame["future_return"], label="Future 10-day return", lw=1.0)
+    plt.plot(var_frame.index, var_frame["future_return"], label="Next-day return", lw=1.0)
     plt.plot(var_frame.index, -var_frame["var"], label="EWMA 99% VaR threshold", lw=1.0)
     breached = var_frame[var_frame["breach"]]
     plt.scatter(breached.index, breached["future_return"], s=12, color="red", label="Breach")
@@ -221,7 +307,7 @@ def run_risk_model() -> dict[str, object]:
 
     return {
         "confidence": 0.99,
-        "horizon_days": 10.0,
+        "horizon_days": 1.0,
         "lambda": 0.94,
         "kupiec": kupiec,
         "parametric_var_es": parametric,
@@ -268,7 +354,13 @@ def run_portfolio_model() -> dict[str, object]:
     summary.to_csv(REPORT_DIR / "portfolio_summary.csv", index=False)
     risk_contrib = pd.DataFrame(
         [
-            {"portfolio": label, **{name: value for name, value in zip(names, risk_contribution(weights, covariance))}}
+            {
+                "portfolio": label,
+                **{
+                    name: value
+                    for name, value in zip(names, risk_contribution(weights, covariance))
+                },
+            }
             for label, weights in portfolio_rows
         ]
     )
@@ -294,7 +386,11 @@ def run_portfolio_model() -> dict[str, object]:
     )
     plt.scatter(
         [summary.loc[summary["portfolio"].eq("global_minimum_variance"), "volatility"].iloc[0]],
-        [summary.loc[summary["portfolio"].eq("global_minimum_variance"), "expected_return"].iloc[0]],
+        [
+            summary.loc[summary["portfolio"].eq("global_minimum_variance"), "expected_return"].iloc[
+                0
+            ]
+        ],
         color="black",
         marker="X",
         s=90,
@@ -313,9 +409,7 @@ def run_portfolio_model() -> dict[str, object]:
     plt.axhline(0.0, color="black", linewidth=0.8)
     _save_plot(FIGURE_DIR / "portfolio_weights.png")
 
-    return {
-        row["portfolio"]: row for row in summary.to_dict(orient="records")
-    }
+    return {row["portfolio"]: row for row in summary.to_dict(orient="records")}
 
 
 def run_option_and_simulation_models() -> dict[str, object]:
@@ -331,7 +425,9 @@ def run_option_and_simulation_models() -> dict[str, object]:
     binomial = np.array(
         [crr_binomial_call(spot, strike, rate, volatility, maturity, int(step)) for step in steps]
     )
-    option_table = pd.DataFrame({"steps": steps, "binomial_call": binomial, "black_scholes": bs_price})
+    option_table = pd.DataFrame(
+        {"steps": steps, "binomial_call": binomial, "black_scholes": bs_price}
+    )
     option_table.to_csv(REPORT_DIR / "option_convergence.csv", index=False)
 
     plt.figure(figsize=(8, 5))
@@ -343,7 +439,9 @@ def run_option_and_simulation_models() -> dict[str, object]:
     plt.legend()
     _save_plot(FIGURE_DIR / "option_convergence.png")
 
-    gbm = simulate_gbm_euler_milstein(spot, drift=rate, volatility=volatility, maturity=1.0, steps=252)
+    gbm = simulate_gbm_euler_milstein(
+        spot, drift=rate, volatility=volatility, maturity=1.0, steps=252
+    )
     gbm.to_csv(REPORT_DIR / "gbm_path_comparison.csv", index_label="time")
 
     plt.figure(figsize=(8, 5))
@@ -356,7 +454,9 @@ def run_option_and_simulation_models() -> dict[str, object]:
     plt.legend()
     _save_plot(FIGURE_DIR / "gbm_path_comparison.png")
 
-    asian = asian_arithmetic_call_mc(spot, strike, rate, volatility, maturity, steps=12, paths=30_000)
+    asian = asian_arithmetic_call_mc(
+        spot, strike, rate, volatility, maturity, steps=12, paths=30_000
+    )
     strike_grid = np.linspace(70, 130, 25)
     maturity_grid = np.linspace(0.1, 2.0, 20)
     surface_rows = []
@@ -388,7 +488,7 @@ def run_option_and_simulation_models() -> dict[str, object]:
 
 def run_factor_and_volatility_models() -> dict[str, object]:
     ohlcv = load_ohlcv()
-    dataset, features = build_trend_dataset(ohlcv)
+    dataset, _ = build_trend_dataset(ohlcv)
     returns = dataset["return_1d"]
     garch = fit_garch11(returns)
     conditional_vol = garch["conditional_volatility"]
@@ -400,7 +500,9 @@ def run_factor_and_volatility_models() -> dict[str, object]:
         }
     ).dropna().to_csv(REPORT_DIR / "garch_volatility_regimes.csv", index_label="date")
 
-    pca_input = dataset[["return_1d", "intraday_return", "overnight_gap", "range_pct", "volume_change"]]
+    pca_input = dataset[
+        ["return_1d", "intraday_return", "overnight_gap", "range_pct", "volume_change"]
+    ]
     _, loadings = pca_statistical_factors(pca_input, n_components=2)
     loadings.to_csv(REPORT_DIR / "pca_factor_loadings.csv")
 
@@ -420,11 +522,7 @@ def run_factor_and_volatility_models() -> dict[str, object]:
     _save_plot(FIGURE_DIR / "pca_factor_loadings.png")
 
     return {
-        "garch": {
-            key: value
-            for key, value in garch.items()
-            if key != "conditional_volatility"
-        },
+        "garch": {key: value for key, value in garch.items() if key != "conditional_volatility"},
         "pca_explained_variance_pc1": float(loadings.loc["explained_variance_ratio", "pc_1"]),
         "pca_explained_variance_pc2": float(loadings.loc["explained_variance_ratio", "pc_2"]),
     }
@@ -471,12 +569,12 @@ def run_time_series_and_retrieval_models() -> dict[str, object]:
     chunks = chunk_text(sample_filing_text, chunk_words=45, overlap_words=10)
     retrieval = TfidfRetriever().fit(chunks)
     results = retrieval.query(question, top_k=3)
-    retrieval_results_frame(question, results).to_csv(REPORT_DIR / "retrieval_demo.csv", index=False)
+    retrieval_results_frame(question, results).to_csv(
+        REPORT_DIR / "retrieval_demo.csv", index=False
+    )
     brief = source_grounded_brief(question, results)
     (REPORT_DIR / "retrieval_brief.md").write_text(
-        "# Source-Grounded Retrieval Demo\n\n"
-        f"Question: {question}\n\n"
-        f"Brief: {brief}\n",
+        f"# Source-Grounded Retrieval Demo\n\nQuestion: {question}\n\nBrief: {brief}\n",
         encoding="utf-8",
     )
     return {
@@ -512,80 +610,245 @@ def run_numerical_examples() -> dict[str, object]:
 
 def write_summary(metrics: dict[str, object]) -> None:
     trading = metrics["trading"]
-    strategy = trading["strategy"]
     benchmark = trading["benchmark"]
-    risk = metrics["risk"]["kupiec"]
-    options = metrics["options_and_simulation"]
-    model_leader = max(
-        trading["model_comparison"],
-        key=lambda row: row.get("roc_auc", float("-inf")),
-    )
-
+    config = trading["configuration"]
     lines = [
-        "# Quantitative Model Analysis Summary",
+        "# Do daily OHLCV forecasts survive evaluation and execution constraints?",
         "",
-        "This run regenerates the repository reports from the bundled sample data.",
+        (
+            "An exploratory study using the bundled OHLCV sample. Original vendor, download date, "
+            "adjustments and redistribution terms remain unverified; see [data notes](../data/README.md)."
+        ),
         "",
-        "## Walk-forward trading model",
+        "## Prediction evidence",
         "",
-        f"- Out-of-sample period: {trading['start'].date()} to {trading['end'].date()}",
-        f"- Classification accuracy: {_pct(trading['model']['accuracy'])}",
-        f"- ROC AUC: {trading['model'].get('roc_auc', float('nan')):.3f}",
-        f"- Best baseline comparison model: {model_leader['model']} (ROC AUC {model_leader.get('roc_auc', float('nan')):.3f})",
-        f"- Strategy total return: {_pct(strategy['total_return'])}",
-        f"- Strategy annual volatility: {_pct(strategy['annual_volatility'])}",
-        f"- Strategy Sharpe ratio: {strategy['sharpe']:.3f}",
-        f"- Strategy max drawdown: {_pct(strategy['max_drawdown'])}",
-        f"- Buy-and-hold total return over same rows: {_pct(benchmark['total_return'])}",
-        f"- Average market exposure: {_pct(trading['exposure'])}",
+        (
+            f"Evaluation signal dates: {trading['start'].date()} to {trading['end'].date()} "
+            f"({int(trading['rows'])} observations). All models use expanding training windows, "
+            f"{config['train_size']} initial training rows and {config['test_size']}-row test blocks. "
+            "Predictions are stored in predictions.csv."
+        ),
+        (
+            "The random forest is fixed as the trading example; it is not selected by the table ranking. "
+            "Each block is fitted after its first test close, when the final training label is observable. "
+            "Class-weighted model outputs are uncalibrated probability scores."
+        ),
         "",
-        "## Risk model",
+        "| Model | ROC AUC | Brier loss (lower is better) |",
+        "|---|---:|---:|",
+    ]
+    for row in trading["model_comparison"]:
+        lines.append(
+            f"| {row['model']} | {row.get('roc_auc', float('nan')):.3f} | {row['brier_score']:.4f} |"
+        )
+    lines += [
         "",
-        f"- EWMA VaR observed breach rate: {_pct(risk['observed_breach_rate'])}",
-        f"- Kupiec POF p-value: {risk['p_value']:.3f}",
-        f"- 10-day parametric Expected Shortfall: {_pct(metrics['risk']['parametric_var_es']['expected_shortfall'])}",
+        (
+            "The training-frequency baseline forecasts the positive-label fraction in each training fold. "
+            "The majority baseline makes a hard class prediction; it is a weaker probability benchmark."
+        ),
         "",
-        "## Option and simulation checks",
-        "",
-        f"- Black-Scholes call value: {options['black_scholes_call']:.4f}",
-        f"- 200-step CRR value: {options['binomial_200_step']:.4f}",
-        f"- Asian call Monte Carlo value: {options['asian_arithmetic_call_mc']['price']:.4f}",
-        f"- ATM delta / gamma / vega: {options['greeks_at_the_money']['delta']:.3f} / {options['greeks_at_the_money']['gamma']:.4f} / {options['greeks_at_the_money']['vega']:.3f}",
-        "",
-        "## Volatility and factor diagnostics",
-        "",
-        f"- GARCH persistence alpha + beta: {metrics['factor_volatility']['garch']['persistence']:.3f}",
-        f"- PCA variance explained by PC1/PC2: {metrics['factor_volatility']['pca_explained_variance_pc1']:.3f} / {metrics['factor_volatility']['pca_explained_variance_pc2']:.3f}",
-        "",
-        "## Time-series and retrieval diagnostics",
-        "",
-        f"- AR(1) phi on daily returns: {metrics['time_series_retrieval']['ar1']['phi']:.3f}",
-        f"- Retrieval demo top TF-IDF score: {metrics['time_series_retrieval']['retrieval_top_score']:.3f}",
-        "",
-        "Research code only. Results are historical and illustrative, not investment advice.",
+        "### Paired prediction-loss uncertainty",
         "",
     ]
-    (REPORT_DIR / "summary.md").write_text("\n".join(lines), encoding="utf-8")
+    for row in trading["prediction_uncertainty"]:
+        lines.append(
+            f"- {int(row['block_size'])}-observation moving blocks: mean Brier improvement "
+            f"over training frequency {row['mean_brier_improvement']:.4f}; "
+            f"95% percentile interval [{row['ci_95_lower']:.4f}, {row['ci_95_upper']:.4f}]."
+        )
+    lines += [
+        "",
+        (
+            "Positive improvement favours the forest. These paired block intervals are conditional "
+            "on the stored predictions; they do not refit models or correct for development choices. "
+            "A different block length or nonstationarity can alter their interpretation."
+        ),
+        "",
+        "## From a forecast to an executed position",
+        "",
+        (
+            "Features and forecasts become available after close t. The primary position is executed "
+            "at close t+1 and earns the close t+1 to t+2 return. Row dates in the backtest label the "
+            "start of the earned return, not its settlement. The first row is flat. Same-close execution "
+            f"is included only as a diagnostic. Both use {config['transaction_cost_bps']:g} bp per unit "
+            "of turnover, with no final liquidation. "
+            "The delay tests persistence of the original next-day forecast; it does not retrain a model "
+            "for the delayed holding period."
+        ),
+        "",
+        "| Execution assumption | Total return | Arithmetic Sharpe | Max drawdown |",
+        "|---|---:|---:|---:|",
+    ]
+    for row in trading["execution_comparison"]:
+        lines.append(
+            f"| {row['execution']} | {_pct(row['total_return'])} | {row['sharpe']:.3f} | {_pct(row['max_drawdown'])} |"
+        )
+    lines += [
+        (
+            f"| Buy and hold, same return rows, before costs | {_pct(benchmark['total_return'])} | "
+            f"{benchmark['sharpe']:.3f} | {_pct(benchmark['max_drawdown'])} |"
+        ),
+        "",
+        (
+            f"Primary strategy exposure: {_pct(trading['exposure'])}. "
+            "Returns exclude cash interest, dividends unless already present in the unverified price data, "
+            "market impact, and taxes. Sharpe uses annualised arithmetic mean excess return "
+            f"({config['annual_factor']} periods/year; risk-free rate {config['risk_free_rate']:g})."
+        ),
+        "",
+        "![Execution comparison](figures/trading_equity_curve.png)",
+        "",
+        "## What the experiment establishes",
+        "",
+        (
+            "This historical sample has already been used for development. Chronological model fitting "
+            "prevents training on future labels but does not create a fresh final holdout. Prediction loss, "
+            "calibration and cost-adjusted returns answer different questions; positive returns or a small "
+            "AUC advantage do not establish a durable trading edge. The next credible step is a documented "
+            "new dataset with a prespecified final evaluation, not choosing the best row above."
+        ),
+        "",
+        (
+            "See run_manifest.json for configuration, environment and source/data/output hashes. "
+            "See [methodology](../docs/methodology.md) for timing and limitations."
+        ),
+    ]
+    if "risk" in metrics:
+        risk = metrics["risk"]["kupiec"]
+        options = metrics["options_and_simulation"]
+        lines += [
+            "",
+            "## Supplementary worked examples",
+            "",
+            "These use separate datasets or stylised assumptions and are not validation of the signal study.",
+            (
+                f"- One-day EWMA VaR: breach rate {_pct(risk['observed_breach_rate'])}; "
+                f"Kupiec asymptotic p-value {risk['p_value']:.4g}. Coverage does not test independence."
+            ),
+            (
+                f"- Black-Scholes call {options['black_scholes_call']:.4f}; "
+                f"200-step CRR {options['binomial_200_step']:.4f}."
+            ),
+            (
+                "- Portfolio allocations, time-series filters, numerical methods and text retrieval "
+                "are separate inspectable examples; full metrics are in metrics.json."
+            ),
+        ]
+    (REPORT_DIR / "summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def write_manifest(study: str) -> None:
+    def digest(path: Path) -> str:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def git(*args: str) -> str | None:
+        try:
+            return subprocess.check_output(
+                ["git", *args], cwd=ROOT, text=True, stderr=subprocess.DEVNULL
+            ).strip()
+        except (OSError, subprocess.CalledProcessError):
+            return None
+
+    sources = [
+        path for folder in ("src", "scripts", "tests") for path in (ROOT / folder).rglob("*.py")
+    ]
+    sources += [
+        ROOT / name
+        for name in ("pyproject.toml", "requirements-lock.txt", "Dockerfile", "Makefile")
+    ]
+    source_hashes = {
+        str(path.relative_to(ROOT)): digest(path) for path in sorted(sources) if path.exists()
+    }
+    data_files = [ROOT / "data" / "vas_equity_etf.csv"]
+    if study == "all":
+        data_files.append(ROOT / "data" / "sp500_index.csv")
+    manifest = {
+        "schema_version": 1,
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "study": study,
+        "source_commit": git("rev-parse", "HEAD"),
+        "working_tree_dirty": bool(git("status", "--porcelain")),
+        "source_files_sha256": source_hashes,
+        "source_snapshot_sha256": hashlib.sha256(
+            json.dumps(source_hashes, sort_keys=True).encode()
+        ).hexdigest(),
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "dependencies": {
+            name: importlib.metadata.version(name)
+            for name in (
+                "numpy",
+                "pandas",
+                "scipy",
+                "scikit-learn",
+                "matplotlib",
+                "joblib",
+                "threadpoolctl",
+            )
+        },
+        "configuration": SIGNAL_CONFIG,
+        "model_parameters": {
+            name: {
+                key: value
+                if isinstance(value, (str, int, float, bool, type(None)))
+                else repr(value)
+                for key, value in model.get_params().items()
+            }
+            for name, model in baseline_model_zoo(SIGNAL_CONFIG["random_state"]).items()
+        },
+        "data_sha256": {str(path.relative_to(ROOT)): digest(path) for path in data_files},
+        "outputs_sha256": {
+            str(path.relative_to(REPORT_DIR)): digest(path) for path in sorted(GENERATED_OUTPUTS)
+        },
+        "data_provenance": "Original provider, download date, adjustments and licence unverified; see data/manifest.json",
+    }
+    (REPORT_DIR / "run_manifest.json").write_text(
+        json.dumps(_json_ready(manifest), indent=2, sort_keys=True, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+GENERATED_OUTPUTS: list[Path] = []
 
 
 def main() -> None:
+    global REPORT_DIR, FIGURE_DIR, GENERATED_OUTPUTS
+    parser = argparse.ArgumentParser(
+        description="Daily OHLCV signal study with optional supplementary examples."
+    )
+    parser.add_argument("--study", choices=["signal", "all"], default="signal")
+    parser.add_argument("--output-dir", type=Path, default=REPORT_DIR)
+    args = parser.parse_args()
+    REPORT_DIR = args.output_dir.resolve()
+    FIGURE_DIR = REPORT_DIR / "figures"
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
-
-    metrics = {
-        "trading": run_trading_model(),
-        "risk": run_risk_model(),
-        "portfolio": run_portfolio_model(),
-        "options_and_simulation": run_option_and_simulation_models(),
-        "factor_volatility": run_factor_and_volatility_models(),
-        "time_series_retrieval": run_time_series_and_retrieval_models(),
-        "numerics": run_numerical_examples(),
-    }
+    before = {p: p.stat().st_mtime_ns for p in REPORT_DIR.rglob("*") if p.is_file()}
+    metrics = {"trading": run_trading_model()}
+    if args.study == "all":
+        metrics.update(
+            {
+                "risk": run_risk_model(),
+                "portfolio": run_portfolio_model(),
+                "options_and_simulation": run_option_and_simulation_models(),
+                "factor_volatility": run_factor_and_volatility_models(),
+                "time_series_retrieval": run_time_series_and_retrieval_models(),
+                "numerics": run_numerical_examples(),
+            }
+        )
     (REPORT_DIR / "metrics.json").write_text(
-        json.dumps(_json_ready(metrics), indent=2, sort_keys=True),
+        json.dumps(_json_ready(metrics), indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
     write_summary(metrics)
+    GENERATED_OUTPUTS = [
+        p
+        for p in REPORT_DIR.rglob("*")
+        if p.is_file() and p.name != "run_manifest.json" and before.get(p) != p.stat().st_mtime_ns
+    ]
+    write_manifest(args.study)
+    print(f"Wrote {args.study} study to {REPORT_DIR}")
 
 
 if __name__ == "__main__":

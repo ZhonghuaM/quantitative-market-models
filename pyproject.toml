@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "quantitative-market-models"
 version = "0.3.0"
-description = "Quant AI research lab for reproducible portfolio, risk, derivatives, and ML signal research."
+description = "Scientific-Python examples for chronological financial prediction and execution-sensitive evaluation."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

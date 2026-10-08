@@ -1,0 +1,3 @@
+model,baseline,block_size,repetitions,observations,mean_brier_improvement,ci_95_lower,ci_95_upper
+random_forest,training_frequency,10,1000,741,-0.004606624433844513,-0.011982460718362736,0.0025248020259204073
+random_forest,training_frequency,20,1000,741,-0.004606624433844513,-0.01199286059364238,0.0026483345052290986

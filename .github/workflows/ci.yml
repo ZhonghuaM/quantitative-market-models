@@ -11,13 +11,13 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Install package
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -r requirements-lock.txt -e ".[dev]"
       - name: Run tests
         run: python -m pytest -q
       - name: Regenerate reports
-        run: python scripts/run_analysis.py
+        run: python scripts/run_analysis.py --study all
       - name: Secret string smoke test
         run: python scripts/secret_smoke_test.py
 

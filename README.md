@@ -1,119 +1,64 @@
-# Quant AI Research Lab
+# quantitative-market-models
 
-A reproducible research platform for portfolio construction, risk analytics, derivatives pricing, volatility modeling, and ML-based financial signal research.
+**Daily financial forecasts, from chronological prediction to execution assumptions.**
 
-This repository is built around one public portfolio identity: a scientific researcher who can turn mathematical ideas into clean, tested, explainable software. It is intentionally package-first rather than notebook-first.
+This scientific-Python study asks whether simple daily price-and-volume features improve direction forecasts over baselines, and whether any apparent trading value survives delayed execution and transaction costs.
 
-## What It Demonstrates
+The experiment follows one path: **data → features → walk-forward predictions → prediction quality and uncertainty → execution sensitivity → performance and drawdown**. Model comparison and trading use the same stored predictions. Results are exploratory: the historical sample has already been inspected, and there is no untouched final holdout.
 
-- Quantitative finance: portfolio optimization, risk parity, CVaR allocation, VaR, Expected Shortfall, stress testing, derivatives pricing, Greeks, stochastic simulation, and numerical methods.
-- Machine learning: baseline-first model comparison, walk-forward validation, feature engineering, calibration, feature importance, and no-lookahead backtesting.
-- Software engineering: Python package structure, type-hinted functions, tests, CI, Docker, Makefile, CLI scripts, and multi-language implementations.
-- Communication: recruiter summary, methodology notes, model cards, limitations, generated tables, and analyst-style figures.
+**Current sample result:** across 741 evaluation rows (2020-06-15 to 2023-05-18), the random forest has AUC 0.525 but worse Brier loss than the training-frequency baseline (0.2511 versus 0.2465). Its net total return changes from 20.36% under the same-close diagnostic to −0.43% with a one-close delay, both at 5 bp turnover cost. The block-bootstrap loss-improvement intervals include zero. This sample establishes sensitivity to the trading clock, not a robust advantage. See the [generated summary](reports/summary.md).
 
-## Example Outputs
+The original source of the bundled CSV files is unknown. The [data record](data/README.md) distinguishes verified file facts from unresolved provenance. These files support an inspectable software example, not a validated investment claim.
 
-![Trading equity curve](reports/figures/trading_equity_curve.png)
+## Run the study
 
-![Model calibration](reports/figures/calibration_curve.png)
-
-![Portfolio weights](reports/figures/portfolio_weights.png)
-
-![Option delta surface](reports/figures/option_delta_surface.png)
-
-## Main Features
-
-- Data ingestion and validation for bundled sample data plus optional public-data download scripts.
-- OHLCV feature engineering for time-series market prediction.
-- Walk-forward classifiers: naive baseline, logistic regression, linear SVM, histogram gradient boosting, and random forest.
-- Transaction-cost-aware long/flat backtesting with equity curves and drawdown.
-- EWMA VaR, rolling Expected Shortfall, Kupiec VaR backtest, and stress scenarios.
-- Portfolio construction: equal weight, tangency, global minimum variance, risk parity, hierarchical risk parity, and CVaR minimization.
-- Derivatives: Black-Scholes, CRR binomial tree, Monte Carlo Asian option, implied volatility, and Greeks.
-- Volatility and factor diagnostics: GARCH(1,1)-style conditional volatility and PCA statistical factors.
-- Time-series research: AR(1), exponential smoothing, Kalman local-level filtering, and pairs-spread utilities.
-- AI/text analysis: source-grounded retrieval demo for filing-style risk text plus responsible-AI notes.
-- Multi-language examples in C++, JavaScript, R, and SQL.
-
-## Quick Start
+From the repository root, using Python 3.12:
 
 ```bash
-python -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+python -m pip install -r requirements-lock.txt
+python -m pip install --no-deps -e .
+python -m pytest -q
 python scripts/run_analysis.py
-pytest
 ```
 
-Or use the Makefile:
+The default `--study signal` runs the main experiment using local data, without credentials or network access. It overwrites the study's generated outputs in `reports/`. The lock file records the tested dependency versions; the [experiment guide](docs/experiment_guide.md) explains the configuration and interpretation.
+
+## Inspect the evidence
+
+| Question | Output |
+|---|---|
+| How do models compare on the same dates? | [Model comparison](reports/model_comparison.csv), [stored predictions](reports/predictions.csv) |
+| How uncertain is the forest's Brier-loss improvement over training frequency? | [Paired block-bootstrap intervals](reports/prediction_uncertainty.csv) |
+| What changes when execution is delayed by one close? | [Execution comparison](reports/execution_comparison.csv), [positions and returns](reports/signal_backtest.csv) |
+| What produced this run? | [Run manifest](reports/run_manifest.json), [summary](reports/summary.md), [data manifest](data/manifest.json) |
+
+![Execution timing comparison](reports/figures/trading_equity_curve.png)
+
+*The delayed-close strategy uses the preceding observation's signal. The same-close calculation is an idealized timing diagnostic; observing final OHLCV does not establish that a trade can obtain that same close.*
+
+![Random-forest probability calibration](reports/figures/calibration_curve.png)
+
+*Calibration compares predicted probabilities with observed frequencies. Prediction quality and trading returns answer different questions; neither plot establishes a durable trading advantage.*
+
+## Read the methods
+
+- [Experiment guide](docs/experiment_guide.md): defaults, outputs, and how to interpret a run.
+- [Methodology](docs/methodology.md): target alignment, training folds, forecast timing, and accounting.
+- [Assumptions and limitations](docs/assumptions_and_limitations.md): data, inference, and execution boundaries.
+- [Model cards](docs/model_cards.md), [architecture](docs/architecture.md), and [research roadmap](docs/research_roadmap.md).
+
+Reusable functions live in `src/quant_models/`, the workflow in `scripts/run_analysis.py`, and numerical checks and regression cases in `tests/`. GitHub Actions runs tests, regenerates reports, and checks the supplementary C++ and JavaScript examples.
+
+## Supplementary worked examples
+
+The repository also contains portfolio allocation, one-day EWMA VaR, option pricing, stochastic simulation, time-series filters, and a small [text-retrieval demonstration](docs/ai_risk_notes.md). These are separate educational examples, not additional evidence for the forecasting strategy.
 
 ```bash
-make install
-make analysis
-make test
-make cpp
-make js
+python scripts/run_analysis.py --study all
 ```
 
-## Optional Data Downloads
+Smaller entry points are in `examples/`; supplementary implementations are in `cpp/`, `javascript/`, `r/`, and `sql/`. Optional downloads are described in the [data guide](data/README.md). A lead–lag benchmark is [future work](docs/research_roadmap.md), not an implemented result.
 
-The bundled data is sufficient to run all tests and reports. Optional refresh examples:
-
-```bash
-python scripts/download_data.py market --symbol spy.us --output data/downloaded/spy_stooq.csv
-python scripts/download_data.py fred --series DGS10 --output data/downloaded/fred_dgs10.csv
-python scripts/download_data.py sec-facts --cik 0000320193 --output data/downloaded/apple_company_facts.json
-```
-
-SEC requests should use a real declared user-agent if you adapt the script for sustained use.
-
-## Generated Reports
-
-Running `python scripts/run_analysis.py` writes:
-
-- `reports/summary.md` - concise research summary.
-- `reports/metrics.json` - machine-readable metrics.
-- `reports/model_comparison.csv` - baseline-first ML comparison.
-- `reports/signal_backtest.csv` - predictions, positions, returns, and equity curves.
-- `reports/stress_scenarios.csv` - scenario shocks and losses.
-- `reports/portfolio_summary.csv` - allocation method comparison.
-- `reports/option_greeks_surface.csv` - Black-Scholes Greek surface.
-- `reports/time_series_diagnostics.csv` - AR(1), smoothing, and Kalman diagnostics.
-- `reports/retrieval_demo.csv` - source-grounded retrieval example.
-- `reports/figures/` - regenerated PNG charts.
-
-## Repository Layout
-
-```text
-.
-├── .github/workflows/ci.yml
-├── cpp/
-├── data/
-├── docs/
-├── examples/
-├── javascript/
-├── r/
-├── reports/
-├── scripts/
-├── sql/
-├── src/quant_models/
-└── tests/
-```
-
-## Documentation
-
-- [Recruiter summary](docs/recruiter_summary.md)
-- [Methodology](docs/methodology.md)
-- [Model cards](docs/model_cards.md)
-- [Assumptions and limitations](docs/assumptions_and_limitations.md)
-- [Architecture](docs/architecture.md)
-- [AI risk notes](docs/ai_risk_notes.md)
-- [Checklist against portfolio brief](docs/checklist_against_portfolio_brief.md)
-
-## Tests and Code Quality
-
-The test suite covers option-pricing convergence, portfolio constraints, risk diagnostics, no-lookahead feature construction, and backtest metrics. GitHub Actions runs Python tests, regenerates reports, compiles the C++ Monte Carlo pricer, runs the JavaScript option pricer, and performs a basic secret-string smoke test.
-
-## Disclaimer
-
-This is a research and software portfolio project. Results are historical and hypothetical. Nothing here is investment advice or a live trading recommendation.
+The software is MIT-licensed; this does not establish rights in the bundled data. Results are historical and hypothetical, not investment advice.

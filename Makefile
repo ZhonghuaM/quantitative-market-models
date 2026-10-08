@@ -1,13 +1,16 @@
-.PHONY: install test analysis clean cpp js
+.PHONY: install test analysis examples clean cpp js
 
 install:
-	python -m pip install -e ".[dev]"
+	python -m pip install -r requirements-lock.txt -e ".[dev]"
 
 test:
 	python -m pytest -q
 
 analysis:
 	python scripts/run_analysis.py
+
+examples:
+	python scripts/run_analysis.py --study all
 
 cpp:
 	c++ -std=c++17 -O3 cpp/monte_carlo_option.cpp -o cpp/monte_carlo_option

@@ -84,6 +84,11 @@ def test_build_trend_dataset_uses_forward_return():
     dataset, features = build_trend_dataset(frame)
     assert features
     assert "forward_return" in dataset
+    assert not dataset.empty
+    pd.testing.assert_series_equal(
+        dataset["forward_return"], close.pct_change().shift(-1).loc[dataset.index],
+        check_names=False,
+    )
     assert dataset["target_up"].eq(1).all()
 
 

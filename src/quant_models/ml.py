@@ -30,7 +30,8 @@ def make_default_classifier(random_state: int = 42) -> RandomForestClassifier:
         max_features="sqrt",
         class_weight="balanced_subsample",
         random_state=random_state,
-        n_jobs=-1,
+        # Fixed accumulation order keeps stored probabilities stable on reruns.
+        n_jobs=1,
     )
 
 
@@ -38,6 +39,8 @@ def _probability_of_positive_class(model: BaseEstimator, x_test: pd.DataFrame) -
     if hasattr(model, "predict_proba"):
         probabilities = model.predict_proba(x_test)
         classes = list(getattr(model, "classes_", [0, 1]))
+        if 1 not in classes:
+            return np.zeros(len(x_test))
         positive_index = classes.index(1)
         return probabilities[:, positive_index]
 
@@ -61,7 +64,11 @@ def walk_forward_classification(
     if len(dataset) <= train_size:
         raise ValueError("dataset is too short for the requested train_size")
 
-    step = step_size or test_size
+    step = test_size if step_size is None else step_size
+    if step < test_size:
+        raise ValueError("step_size must be at least test_size to avoid overlapping predictions")
+    if not dataset.index.is_unique or not dataset.index.is_monotonic_increasing:
+        raise ValueError("dataset must have a unique chronological index")
     estimator = model if model is not None else make_default_classifier()
     records: list[pd.DataFrame] = []
     importances: list[pd.Series] = []
@@ -105,7 +112,9 @@ def walk_forward_classification(
 
     predictions = pd.concat(records).sort_index()
     if importances:
-        feature_importance = pd.concat(importances, axis=1).mean(axis=1).sort_values(ascending=False)
+        feature_importance = (
+            pd.concat(importances, axis=1).mean(axis=1).sort_values(ascending=False)
+        )
     else:
         feature_importance = pd.Series(dtype=float)
 
@@ -116,6 +125,10 @@ def walk_forward_classification(
         ),
     }
     if predictions["actual_up"].nunique() == 2:
-        metrics["roc_auc"] = float(roc_auc_score(predictions["actual_up"], predictions["probability_up"]))
+        metrics["roc_auc"] = float(
+            roc_auc_score(predictions["actual_up"], predictions["probability_up"])
+        )
 
-    return WalkForwardResult(predictions=predictions, feature_importance=feature_importance, metrics=metrics)
+    return WalkForwardResult(
+        predictions=predictions, feature_importance=feature_importance, metrics=metrics
+    )

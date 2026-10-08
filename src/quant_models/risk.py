@@ -80,15 +80,43 @@ def stress_scenario_table(
     return frame.sort_values("loss", ascending=False).reset_index(drop=True)
 
 
-def ewma_volatility(returns: pd.Series, lambda_: float = 0.94) -> pd.Series:
-    """RiskMetrics-style EWMA volatility estimate."""
+def ewma_volatility(
+    returns: pd.Series,
+    lambda_: float = 0.94,
+    *,
+    calibration_window: int = 20,
+    initial_variance: float | None = None,
+) -> pd.Series:
+    """Forecast volatility at t using only returns strictly before t.
+
+    By default, the first ``calibration_window`` nonmissing observations estimate
+    the initial population variance; their forecasts are NaN and they are excluded
+    from evaluation. The first forecast is for the following observation. An
+    externally supplied ``initial_variance`` instead supplies the forecast for the
+    first observation and must have been estimated before the input period.
+    Missing returns are omitted, so the clock advances in observed return periods.
+    """
 
     if not 0.0 < lambda_ < 1.0:
         raise ValueError("lambda_ must be between zero and one")
+    if not isinstance(calibration_window, (int, np.integer)) or calibration_window < 2:
+        raise ValueError("calibration_window must be an integer of at least two")
+    if initial_variance is not None and (
+        not np.isfinite(initial_variance) or initial_variance < 0.0
+    ):
+        raise ValueError("initial_variance must be finite and nonnegative")
     clean = returns.astype(float).dropna()
-    variance = pd.Series(index=clean.index, dtype=float)
-    variance.iloc[0] = clean.var(ddof=0)
-    for i in range(1, len(clean)):
+    if not np.isfinite(clean).all():
+        raise ValueError("returns must be finite")
+    variance = pd.Series(np.nan, index=clean.index, dtype=float)
+    start = calibration_window if initial_variance is None else 0
+    if start < len(clean):
+        variance.iloc[start] = (
+            clean.iloc[:calibration_window].var(ddof=0)
+            if initial_variance is None
+            else initial_variance
+        )
+    for i in range(start + 1, len(clean)):
         variance.iloc[i] = lambda_ * variance.iloc[i - 1] + (1.0 - lambda_) * clean.iloc[i - 1] ** 2
     volatility = np.sqrt(variance)
     volatility.name = "ewma_volatility"
@@ -110,15 +138,34 @@ def _future_compounded_return(returns: pd.Series, horizon: int) -> pd.Series:
 def ewma_var_backtest(
     returns: pd.Series,
     confidence: float = 0.99,
-    horizon: int = 10,
+    horizon: int = 1,
     lambda_: float = 0.94,
+    *,
+    calibration_window: int = 20,
+    initial_variance: float | None = None,
 ) -> pd.DataFrame:
-    """Backtest EWMA normal VaR against future horizon losses."""
+    """Compare after-close-t normal VaR with compounded returns t+1 through t+h.
 
-    if horizon <= 0:
-        raise ValueError("horizon must be positive")
+    The forecast incorporates the observed return at t. Calibration observations
+    and incomplete forward windows are excluded. The zero-mean normal model uses
+    square-root-of-time scaling, which is an approximation for compounded losses.
+    For horizons above one, daily rows contain overlapping losses: applying an
+    ordinary independent-Bernoulli Kupiec reference distribution to those rows is
+    not justified. Even at horizon one, this test does not establish independence.
+    """
+
+    if not isinstance(horizon, (int, np.integer)) or horizon <= 0:
+        raise ValueError("horizon must be a positive integer")
+    if not 0.0 < confidence < 1.0:
+        raise ValueError("confidence must be between zero and one")
     clean = returns.astype(float).dropna()
-    volatility = ewma_volatility(clean, lambda_=lambda_)
+    prior_volatility = ewma_volatility(
+        clean,
+        lambda_=lambda_,
+        calibration_window=calibration_window,
+        initial_variance=initial_variance,
+    )
+    volatility = np.sqrt(lambda_ * prior_volatility**2 + (1.0 - lambda_) * clean**2)
     var = norm.ppf(confidence) * volatility * math.sqrt(horizon)
     future_return = _future_compounded_return(clean, horizon)
     future_loss = -future_return
@@ -136,27 +183,38 @@ def ewma_var_backtest(
 
 
 def kupiec_pof_test(breaches: pd.Series, expected_probability: float) -> dict[str, float]:
-    """Kupiec proportion-of-failures likelihood-ratio test."""
+    """Kupiec unconditional-coverage test with an asymptotic chi-square reference.
 
-    clean = breaches.astype(bool).dropna()
+    Missing indicators are excluded. This reference assumes independent Bernoulli
+    trials under the null; overlapping multi-period losses violate that assumption.
+    The statistic tests the breach rate, not the independence of the indicators.
+    """
+
+    if not 0.0 < expected_probability < 1.0:
+        raise ValueError("expected_probability must be between zero and one")
+    clean = breaches.dropna()
+    if not clean.isin([False, True]).all():
+        raise ValueError("breaches must contain boolean or zero/one indicators")
+    clean = clean.astype(bool)
     n = len(clean)
     x = int(clean.sum())
     if n == 0:
         raise ValueError("breaches cannot be empty")
     observed = x / n
-    if x in (0, n):
-        lr = 0.0
-    else:
-        log_likelihood_expected = (n - x) * np.log(1.0 - expected_probability) + x * np.log(
-            expected_probability
-        )
+    log_likelihood_expected = (n - x) * np.log1p(-expected_probability) + x * np.log(
+        expected_probability
+    )
+    # At an empirical rate of zero or one, the maximized likelihood is one;
+    # the limiting terms 0 * log(0) contribute zero, rather than NaN.
+    log_likelihood_observed = 0.0
+    if 0 < x < n:
         log_likelihood_observed = (n - x) * np.log(1.0 - observed) + x * np.log(observed)
-        lr = -2.0 * (log_likelihood_expected - log_likelihood_observed)
+    lr = max(0.0, 2.0 * (log_likelihood_observed - log_likelihood_expected))
     return {
         "observations": float(n),
         "breaches": float(x),
         "expected_breach_rate": float(expected_probability),
         "observed_breach_rate": float(observed),
         "lr_statistic": float(lr),
-        "p_value": float(1.0 - chi2.cdf(lr, df=1)),
+        "p_value": float(chi2.sf(lr, df=1)),
     }

@@ -32,10 +32,12 @@ def equity_curve(returns: pd.Series) -> pd.Series:
     return curve
 
 
-def drawdown(equity: pd.Series) -> pd.Series:
-    """Compute percentage drawdown from running equity peaks."""
+def drawdown(equity: pd.Series, initial_wealth: float = 1.0) -> pd.Series:
+    """Drawdown including wealth immediately before the first observed return."""
 
-    running_peak = equity.cummax()
+    if initial_wealth <= 0:
+        raise ValueError("initial_wealth must be positive")
+    running_peak = equity.cummax().clip(lower=initial_wealth)
     dd = equity / running_peak - 1.0
     dd.name = "drawdown"
     return dd
@@ -46,7 +48,11 @@ def performance_metrics(
     annual_factor: int = 252,
     risk_free_rate: float = 0.0,
 ) -> dict[str, float]:
-    """Compute common return, risk, and drawdown metrics."""
+    """Return CAGR, population volatility, arithmetic excess Sharpe and drawdown.
+
+    ``risk_free_rate`` is an annual effective rate, converted to a per-period
+    compounded rate for Sharpe; ``annual_return`` is separately reported CAGR.
+    """
 
     clean = returns.dropna()
     if clean.empty:
@@ -56,8 +62,11 @@ def performance_metrics(
     years = len(clean) / annual_factor
     annual_return = float((1.0 + total_return) ** (1.0 / years) - 1.0) if years > 0 else np.nan
     annual_volatility = float(clean.std(ddof=0) * np.sqrt(annual_factor))
-    excess_return = annual_return - risk_free_rate
-    sharpe = float(excess_return / annual_volatility) if annual_volatility > 0 else np.nan
+    if risk_free_rate <= -1.0:
+        raise ValueError("risk_free_rate must exceed -1")
+    daily_risk_free = (1.0 + risk_free_rate) ** (1.0 / annual_factor) - 1.0
+    annual_excess_mean = float((clean - daily_risk_free).mean() * annual_factor)
+    sharpe = float(annual_excess_mean / annual_volatility) if annual_volatility > 0 else np.nan
     curve = equity_curve(clean)
     max_drawdown = float(drawdown(curve).min())
     calmar = float(annual_return / abs(max_drawdown)) if max_drawdown < 0 else np.nan
@@ -81,21 +90,37 @@ def backtest_probability_signal(
     short_threshold: float = 0.45,
     allow_short: bool = False,
     transaction_cost_bps: float = 5.0,
+    execution_delay: int = 1,
 ) -> pd.DataFrame:
-    """Backtest a probability-based signal against next-period returns."""
+    """Backtest close-indexed signals with an explicit delay in observed rows.
+
+    Row t contains an after-close signal and the return from close t to t+1.
+    The default uses signal[t-1] for that return: execution at the next close
+    after signal formation. Delay zero is a same-close diagnostic, not an
+    executable assumption for final OHLCV features. Input rows must span
+    consecutive trading observations; calendar weekends are not extra rows.
+    Costs include entry and position changes, but no forced final liquidation.
+    """
 
     required = {"probability_up", "forward_return"}
     missing = required.difference(predictions.columns)
     if missing:
         raise ValueError(f"predictions missing columns: {sorted(missing)}")
+    if not predictions.index.is_unique or not predictions.index.is_monotonic_increasing:
+        raise ValueError("predictions must have a unique chronological index")
+    if not isinstance(execution_delay, int) or execution_delay < 0:
+        raise ValueError("execution_delay must be a nonnegative integer")
+    if not np.isfinite(transaction_cost_bps) or transaction_cost_bps < 0:
+        raise ValueError("transaction_cost_bps must be finite and nonnegative")
 
     result = predictions.copy()
-    result["position"] = positions_from_probabilities(
+    result["signal_position"] = positions_from_probabilities(
         result["probability_up"],
         long_threshold=long_threshold,
         short_threshold=short_threshold,
         allow_short=allow_short,
     )
+    result["position"] = result["signal_position"].shift(execution_delay, fill_value=0.0)
     turnover = result["position"].diff().abs().fillna(result["position"].abs())
     cost = turnover * transaction_cost_bps / 10_000.0
     result["strategy_return_gross"] = result["position"] * result["forward_return"]

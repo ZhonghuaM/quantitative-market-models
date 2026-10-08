@@ -5,8 +5,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage
-from scipy.spatial.distance import squareform
 from scipy.optimize import minimize
+from scipy.spatial.distance import squareform
 
 
 def covariance_from_vol_corr(volatilities: np.ndarray, correlation: np.ndarray) -> np.ndarray:
@@ -165,9 +165,11 @@ def cvar_minimization_portfolio(
 
 
 def hierarchical_risk_parity_portfolio(covariance: pd.DataFrame | np.ndarray) -> np.ndarray:
-    """Compute a compact hierarchical risk-parity allocation."""
+    """Compute HRP weights in the original covariance row/column order."""
 
     cov = pd.DataFrame(covariance).astype(float)
+    if not cov.index.is_unique or not cov.index.equals(cov.columns):
+        raise ValueError("covariance must have unique matching row and column labels")
     corr = cov.copy()
     std = np.sqrt(np.diag(cov))
     corr.iloc[:, :] = cov.to_numpy() / np.outer(std, std)
@@ -191,7 +193,7 @@ def hierarchical_risk_parity_portfolio(covariance: pd.DataFrame | np.ndarray) ->
         weights[left] *= allocation_left
         weights[right] *= 1.0 - allocation_left
         clusters.extend([left, right])
-    result = weights.sort_index().to_numpy()
+    result = weights.reindex(cov.index).to_numpy()
     return result / result.sum()
 
 

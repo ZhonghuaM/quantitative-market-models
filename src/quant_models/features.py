@@ -5,7 +5,6 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-
 FEATURE_COLUMNS = [
     "return_1d",
     "return_2d",
@@ -29,15 +28,23 @@ FEATURE_COLUMNS = [
 
 
 def relative_strength_index(close: pd.Series, window: int = 14) -> pd.Series:
-    """Compute Wilder-style RSI from a closing-price series."""
+    """Compute exponentially smoothed RSI, retaining the warm-up as missing.
 
+    With no smoothed losses RSI is 100, with no gains it is zero, and with
+    neither gains nor losses it is the neutral value 50.
+    """
+
+    if not isinstance(window, (int, np.integer)) or window <= 0:
+        raise ValueError("window must be a positive integer")
     delta = close.diff()
     gain = delta.clip(lower=0.0)
     loss = -delta.clip(upper=0.0)
     avg_gain = gain.ewm(alpha=1 / window, adjust=False, min_periods=window).mean()
     avg_loss = loss.ewm(alpha=1 / window, adjust=False, min_periods=window).mean()
     rs = avg_gain / avg_loss.replace(0.0, np.nan)
-    return 100.0 - (100.0 / (1.0 + rs))
+    rsi = 100.0 - (100.0 / (1.0 + rs))
+    rsi = rsi.mask(avg_loss.eq(0.0), 100.0)
+    return rsi.mask(avg_gain.eq(0.0) & avg_loss.eq(0.0), 50.0)
 
 
 def build_trend_dataset(

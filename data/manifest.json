@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "inventory_date": "2026-10-09",
+  "inventory_date_meaning": "Date this repository file inventory was recorded; not a retrieval or market-data as-of date.",
+  "scope": "Facts derived from the bundled bytes. Filenames and field labels are not verified instrument or provider metadata.",
+  "unknown_value_convention": "null means unverified or unknown, not not-applicable.",
+  "limitations": [
+    "No original download record or reliable source attribution is available.",
+    "Non-missing cells and unique dates do not establish complete market-session coverage.",
+    "An Adj Close label, including equality with Close, does not establish an adjustment policy.",
+    "The repository software licence does not establish the data licence or redistribution rights.",
+    "Optional downloader code is independent of the provenance of these files."
+  ],
+  "files": [
+    {
+      "path": "data/vas_equity_etf.csv",
+      "sha256": "8b6d5d0077d2cb558436b999f5d9ad494d24eed4f59cab9f8e4b863bad3663f9",
+      "role": "primary signal study OHLCV input",
+      "observed_file_facts": {
+        "byte_size": 82522,
+        "row_count": 1266,
+        "columns": [
+          "Date",
+          "Open",
+          "High",
+          "Low",
+          "Close",
+          "Adj Close",
+          "Volume"
+        ],
+        "date_column": "Date",
+        "date_parse_format": "%d/%m/%Y",
+        "date_min": "2018-05-21",
+        "date_max": "2023-05-19",
+        "date_order_ascending": true,
+        "invalid_date_count": 0,
+        "duplicate_date_count": 0,
+        "duplicate_row_count": 0,
+        "missing_cell_count_by_column": {
+          "Date": 0,
+          "Open": 0,
+          "High": 0,
+          "Low": 0,
+          "Close": 0,
+          "Adj Close": 0,
+          "Volume": 0
+        },
+        "date_gap_counts_calendar_days": {
+          "1": 995,
+          "2": 8,
+          "3": 243,
+          "4": 11,
+          "5": 8
+        },
+        "adj_close_equals_close_every_row": true
+      },
+      "provenance_status": "unknown",
+      "unverified": {
+        "provider": null,
+        "original_download_url": null,
+        "retrieved_at": null,
+        "as_of_date": null,
+        "instrument_name": null,
+        "ticker": null,
+        "exchange": null,
+        "currency": null,
+        "trading_calendar": null,
+        "timezone": null,
+        "price_adjustment_policy": null,
+        "dividend_treatment": null,
+        "corporate_action_treatment": null,
+        "missing_observation_policy": null,
+        "original_transformations": null,
+        "data_licence": null,
+        "redistribution_permission": null,
+        "missing_market_session_count": null
+      }
+    },
+    {
+      "path": "data/sp500_index.csv",
+      "sha256": "3fd2699269347b96aeefb34d6c763fb316bf66d34e50f294980a85a932d43155",
+      "role": "supplementary risk example price-series input",
+      "observed_file_facts": {
+        "byte_size": 29218,
+        "row_count": 1250,
+        "columns": [
+          "Date",
+          "SP500"
+        ],
+        "date_column": "Date",
+        "date_parse_format": "%d/%m/%Y",
+        "date_min": "2013-01-22",
+        "date_max": "2018-01-05",
+        "date_order_ascending": true,
+        "invalid_date_count": 0,
+        "duplicate_date_count": 0,
+        "duplicate_row_count": 0,
+        "missing_cell_count_by_column": {
+          "Date": 0,
+          "SP500": 0
+        },
+        "date_gap_counts_calendar_days": {
+          "1": 980,
+          "2": 11,
+          "3": 225,
+          "4": 33
+        }
+      },
+      "provenance_status": "unknown",
+      "unverified": {
+        "provider": null,
+        "original_download_url": null,
+        "retrieved_at": null,
+        "as_of_date": null,
+        "instrument_name": null,
+        "ticker": null,
+        "exchange": null,
+        "currency": null,
+        "trading_calendar": null,
+        "timezone": null,
+        "price_adjustment_policy": null,
+        "dividend_treatment": null,
+        "corporate_action_treatment": null,
+        "missing_observation_policy": null,
+        "original_transformations": null,
+        "data_licence": null,
+        "redistribution_permission": null,
+        "missing_market_session_count": null
+      }
+    }
+  ]
+}
