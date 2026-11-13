@@ -1,0 +1,72 @@
+{
+  "assets": [
+    "SYNTH_EQUITY",
+    "SYNTH_DEFENSIVE",
+    "SYNTH_BOND"
+  ],
+  "command": "monte-carlo",
+  "covariance_ridge": 1e-12,
+  "data": {
+    "end_date": "2023-06-14",
+    "price_rows": 900,
+    "return_rows": 899,
+    "start_date": "2020-01-02"
+  },
+  "effective_log_covariance": [
+    [
+      0.00011113148716280556,
+      1.4564451946326976e-05,
+      -7.497000991631966e-06
+    ],
+    [
+      1.4564451946326976e-05,
+      3.154321755812664e-05,
+      2.6388372174060518e-06
+    ],
+    [
+      -7.497000991631966e-06,
+      2.6388372174060518e-06,
+      1.2229187971635828e-05
+    ]
+  ],
+  "estimated_log_covariance": [
+    [
+      0.00011113148616280556,
+      1.4564451946326976e-05,
+      -7.497000991631966e-06
+    ],
+    [
+      1.4564451946326976e-05,
+      3.1543216558126635e-05,
+      2.6388372174060518e-06
+    ],
+    [
+      -7.497000991631966e-06,
+      2.6388372174060518e-06,
+      1.2229186971635829e-05
+    ]
+  ],
+  "estimated_log_mean": [
+    7.082644835887869e-05,
+    0.00012063347338941614,
+    0.00028191615677628467
+  ],
+  "generator": "SplitMix64; 52-bit open-interval uniforms; cached Box-Muller",
+  "mean_simulated_return": 0.00011561312226131223,
+  "monte_carlo_es": 0.017649319236185543,
+  "monte_carlo_var": 0.0154030501111064,
+  "native_version": "1.0.0",
+  "schema_version": 1,
+  "settings": {
+    "confidence": 0.99,
+    "horizon": 1,
+    "paths": 20000,
+    "seed": 42
+  },
+  "simulated_return_std": 0.006690353388141654,
+  "weights": [
+    0.6,
+    0.25,
+    0.15
+  ]
+}

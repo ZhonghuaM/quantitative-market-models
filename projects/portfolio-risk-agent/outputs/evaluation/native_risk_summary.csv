@@ -1,0 +1,13 @@
+metric,value
+observations,899
+mean_daily_return,0.00015309303945196948
+volatility_daily,0.006738954289388352
+annualized_volatility,0.10697758287812148
+total_return,0.12436919208290519
+annualized_return,0.033404523905394584
+historical_var,0.016065237999234497
+historical_es,0.019540272660133525
+confidence,0.99
+weight_SYNTH_EQUITY,0.6
+weight_SYNTH_DEFENSIVE,0.25
+weight_SYNTH_BOND,0.15

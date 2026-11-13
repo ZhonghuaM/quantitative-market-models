@@ -1,0 +1,40 @@
+{
+  "adjustments": "synthetic prices, no corporate actions",
+  "calendar_timezone": "daily session-date labels; exchange-calendar completeness is not verified",
+  "dataset_id": "data_5395687880fe0f0d",
+  "date_bounds": "start inclusive, end exclusive",
+  "fetched_at_utc": "2026-11-13T01:21:40.813658+00:00",
+  "first_date": "2020-01-02",
+  "fixture_sha256": "7ef771e0dbce574ba7f5fe8da0ddd5b47ef07a5f5370342f95a673bfd3d83cd3",
+  "last_date": "2023-06-14",
+  "licensing": "repository synthetic fixture",
+  "missing_observations": "any missing/nonfinite requested asset price on a returned row is rejected; no filling",
+  "parameters": {
+    "end": "2023-06-15",
+    "start": "2020-01-02",
+    "tickers": [
+      "SYNTH_EQUITY",
+      "SYNTH_DEFENSIVE",
+      "SYNTH_BOND"
+    ]
+  },
+  "price_observations": 900,
+  "prices_sha256": "7ef771e0dbce574ba7f5fe8da0ddd5b47ef07a5f5370342f95a673bfd3d83cd3",
+  "provider": "local_synthetic_fixture",
+  "return_definition": "simple close-to-close returns; pct_change(fill_method=None)",
+  "return_observations": 899,
+  "returns_sha256": "bc4e7ade49bd8ac286a9c799146078b2c8fb16d17b8092cac97539d210ea0184",
+  "schema_version": 1,
+  "source": "fixture",
+  "synthetic": true,
+  "tickers": [
+    "SYNTH_EQUITY",
+    "SYNTH_DEFENSIVE",
+    "SYNTH_BOND"
+  ],
+  "versions": {
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "yfinance": "1.8.0"
+  }
+}

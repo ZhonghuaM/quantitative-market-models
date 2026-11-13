@@ -1,0 +1,99 @@
+[
+  {
+    "arguments": {
+      "end": "2023-06-15",
+      "source": "fixture",
+      "start": "2020-01-02",
+      "tickers": [
+        "SYNTH_EQUITY",
+        "SYNTH_DEFENSIVE",
+        "SYNTH_BOND"
+      ]
+    },
+    "elapsed_seconds": 0.2520040422677994,
+    "evidence": null,
+    "sequence": 0,
+    "status": "success",
+    "tool": "load_market_data"
+  },
+  {
+    "arguments": {
+      "confidence": 0.99,
+      "dataset_id": "data_5395687880fe0f0d",
+      "weights": [
+        0.6,
+        0.25,
+        0.15
+      ]
+    },
+    "elapsed_seconds": 0.021715708076953888,
+    "evidence": "estimate_risk",
+    "sequence": 1,
+    "status": "success",
+    "tool": "estimate_risk"
+  },
+  {
+    "arguments": {
+      "confidence": 0.99,
+      "dataset_id": "data_5395687880fe0f0d",
+      "horizon": 1,
+      "paths": 20000,
+      "seed": 42,
+      "weights": [
+        0.6,
+        0.25,
+        0.15
+      ]
+    },
+    "elapsed_seconds": 0.028585624881088734,
+    "evidence": "simulate_risk",
+    "sequence": 2,
+    "status": "success",
+    "tool": "simulate_risk"
+  },
+  {
+    "arguments": {
+      "confidence": 0.99,
+      "dataset_id": "data_5395687880fe0f0d",
+      "frontier_points": 15,
+      "train_observations": 504,
+      "weights": [
+        0.6,
+        0.25,
+        0.15
+      ]
+    },
+    "elapsed_seconds": 0.18949370738118887,
+    "evidence": "optimise_portfolio",
+    "sequence": 3,
+    "status": "success",
+    "tool": "optimise_portfolio"
+  },
+  {
+    "arguments": {
+      "confidence": 0.99,
+      "dataset_id": "data_5395687880fe0f0d",
+      "weights": [
+        0.6,
+        0.25,
+        0.15
+      ],
+      "window": 250
+    },
+    "elapsed_seconds": 0.03477391600608826,
+    "evidence": "backtest_var",
+    "sequence": 4,
+    "status": "success",
+    "tool": "backtest_var"
+  },
+  {
+    "arguments": {
+      "dataset_id": "data_5395687880fe0f0d"
+    },
+    "elapsed_seconds": 0.6680958326905966,
+    "evidence": "report",
+    "sequence": 5,
+    "status": "success",
+    "tool": "write_report"
+  }
+]

@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "data_kind": "fully synthetic; no observations sourced from a financial market",
+  "provider": "repository generator data/generate_synthetic.py",
+  "licence": "MIT; generated for this repository",
+  "file": "synthetic_prices.csv",
+  "sha256": "7ef771e0dbce574ba7f5fe8da0ddd5b47ef07a5f5370342f95a673bfd3d83cd3",
+  "generator_sha256": "295df45ad96e41ec39ab6645a898ec9101d3d88c510bf60e22ddf104036b7baa",
+  "numpy_version": "2.5.4",
+  "rows": 900,
+  "return_observations": 899,
+  "assets": [
+    "SYNTH_EQUITY",
+    "SYNTH_DEFENSIVE",
+    "SYNTH_BOND"
+  ],
+  "start": "2020-01-02",
+  "end": "2023-06-14",
+  "date_labels": "Monday\u2013Friday only; not an exchange calendar; public holidays are included",
+  "timezone": null,
+  "timezone_note": "Date-only synthetic labels; no trading timestamps or real venue",
+  "currency": "arbitrary synthetic price units",
+  "initial_prices": [
+    100.0,
+    100.0,
+    100.0
+  ],
+  "seed": 20261113,
+  "rng": "NumPy Generator(PCG64)",
+  "process": "correlated Gaussian log increments, deterministic piecewise drift/volatility; positive prices by cumulative exponentiation",
+  "annualization_factor": 252,
+  "annual_log_drift": [
+    0.07,
+    0.025,
+    0.035
+  ],
+  "annual_volatility": [
+    0.16,
+    0.08,
+    0.05
+  ],
+  "correlation": [
+    [
+      1.0,
+      0.25,
+      -0.15
+    ],
+    [
+      0.25,
+      1.0,
+      0.2
+    ],
+    [
+      -0.15,
+      0.2,
+      1.0
+    ]
+  ],
+  "regimes": [
+    {
+      "first_return_index": 0,
+      "stop_return_index": 300,
+      "volatility_multiplier": 1.0,
+      "annual_log_drift_shift": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_return_index": 300,
+      "stop_return_index": 600,
+      "volatility_multiplier": 1.35,
+      "annual_log_drift_shift": [
+        -0.02,
+        -0.005,
+        0.005
+      ]
+    },
+    {
+      "first_return_index": 600,
+      "stop_return_index": 899,
+      "volatility_multiplier": 0.85,
+      "annual_log_drift_shift": [
+        0.01,
+        0.005,
+        0.0
+      ]
+    }
+  ],
+  "regime_index_note": "Return index 0 connects price rows 0 and 1; stop indices are exclusive",
+  "adjustments": "none; no dividends, splits, missing rows, fees, or other corporate actions are simulated",
+  "purpose": "deterministic software/numerical evaluation, not evidence of investment performance",
+  "reproduction_note": "Committed bytes are canonical. Generator records NumPy version; floating-point/library differences may affect final digits."
+}

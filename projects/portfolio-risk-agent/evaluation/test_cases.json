@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "suite_kind": "hand-authored tool-contract and intent examples",
+  "llm_evaluation_status": "not_run",
+  "scope": "Expected calls and constraints for a future tool-selection evaluation. These are public design cases, not an untouched held-out benchmark. Passing scripted schema tests does not measure LLM accuracy.",
+  "scoring_plan": "For an actual model run, record model/version, prompt, offered tool schemas, raw calls, validation outcomes, and final grounded response. Score tool selection, argument validity, task completion, and unsupported claims separately. Do not turn API failures into successful task completions.",
+  "defaults": {
+    "source": "fixture",
+    "tickers": ["SYNTH_EQUITY", "SYNTH_DEFENSIVE", "SYNTH_BOND"],
+    "start": "2020-01-02",
+    "end": "2023-06-15",
+    "weights": [0.6, 0.25, 0.15],
+    "confidence": 0.99
+  },
+  "cases": [
+    {
+      "id": "historical_risk",
+      "prompt": "Using the three synthetic assets and the fixed 60/25/15 weights, calculate one-day 99% historical VaR and Expected Shortfall over the demo date range.",
+      "expected_tool_names": ["load_market_data", "estimate_risk"],
+      "argument_constraints": {
+        "load_market_data": {"source": "fixture", "tickers": ["SYNTH_EQUITY", "SYNTH_DEFENSIVE", "SYNTH_BOND"], "start": "2020-01-02", "end": "2023-06-15"},
+        "estimate_risk": {"dataset_id": "must equal the successful load result", "weights": [0.6, 0.25, 0.15], "confidence": 0.99}
+      },
+      "expected_outcome": "Use actual tool numbers, preserve loss signs, identify the data as synthetic, and state empirical ES convention."
+    },
+    {
+      "id": "monte_carlo",
+      "prompt": "Simulate the same synthetic portfolio for one day using 20,000 paths, seed 42 and 99% confidence, and describe the model assumption.",
+      "expected_tool_names": ["load_market_data", "simulate_risk"],
+      "argument_constraints": {"simulate_risk": {"dataset_id": "successful load result", "weights": [0.6, 0.25, 0.15], "confidence": 0.99, "paths": 20000, "horizon": 1, "seed": 42}},
+      "expected_outcome": "Report simulation outputs as conditional on fitted Gaussian log increments, not observed market or portfolio performance."
+    },
+    {
+      "id": "optimisation_and_holdout",
+      "prompt": "Fit a long-only minimum-variance allocation on the first 504 return observations, show a 15-point frontier and compare fixed weights on the subsequent holdout.",
+      "expected_tool_names": ["load_market_data", "optimise_portfolio"],
+      "argument_constraints": {"optimise_portfolio": {"dataset_id": "successful load result", "weights": [0.6, 0.25, 0.15], "confidence": 0.99, "train_observations": 504, "frontier_points": 15}},
+      "expected_outcome": "Distinguish training estimates from holdout results; mention long-only constraints and the explicit daily covariance ridge."
+    },
+    {
+      "id": "rolling_backtest",
+      "prompt": "Backtest the same portfolio's one-day 99% historical VaR with a strictly preceding 250-return window, including breach coverage.",
+      "expected_tool_names": ["load_market_data", "backtest_var"],
+      "argument_constraints": {"backtest_var": {"dataset_id": "successful load result", "weights": [0.6, 0.25, 0.15], "confidence": 0.99, "window": 250}},
+      "expected_outcome": "Use each threshold before its realized return; do not describe Kupiec coverage as proof of independence or model validity."
+    },
+    {
+      "id": "full_scripted_contract",
+      "prompt": "Run the fixed demo workflow and write its local report.",
+      "expected_tool_names": ["load_market_data", "estimate_risk", "simulate_risk", "optimise_portfolio", "backtest_var", "write_report"],
+      "argument_constraints": {"write_report": {"dataset_id": "the same successfully loaded dataset used by all preceding calls"}},
+      "expected_outcome": "All calls satisfy the declared schema and fixed configuration; mark a scripted run as scripted, with no LLM accuracy claim."
+    },
+    {
+      "id": "invalid_weights",
+      "prompt": "Use weights 0.8, 0.4 and 0.2 for the three assets without normalization.",
+      "expected_tool_names": [],
+      "argument_constraints": {"weights": "reject: weights must sum to one; do not silently normalize or alter the request"},
+      "expected_outcome": "Explain the invalid input; no native numerical calculation or fabricated result."
+    },
+    {
+      "id": "missing_fixture_asset",
+      "prompt": "Load a synthetic fixture asset named SYNTH_MISSING and calculate its risk.",
+      "expected_tool_names": ["load_market_data"],
+      "argument_constraints": {"load_market_data": {"source": "fixture", "tickers": ["SYNTH_MISSING"], "start": "2020-01-02", "end": "2023-06-15"}},
+      "expected_outcome": "A missing-asset or fixed-configuration error ends dependent work; no invented replacement or result."
+    },
+    {
+      "id": "external_data_failure",
+      "prompt": "Load an external price series. The data service returns HTTP 503. Explain what can be concluded.",
+      "expected_tool_names": ["load_market_data"],
+      "argument_constraints": {"load_market_data": {"source": "yahoo", "tickers": "configured external ticker symbols only", "start": "configured ISO start date", "end": "configured exclusive ISO end date"}},
+      "expected_outcome": "Surface the unavailable-data error and stop dependent risk calls; do not label the synthetic fixture as downloaded market data."
+    }
+  ]
+}

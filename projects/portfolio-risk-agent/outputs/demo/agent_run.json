@@ -1,0 +1,1389 @@
+{
+  "events": [
+    {
+      "arguments": {
+        "end": "2023-06-15",
+        "source": "fixture",
+        "start": "2020-01-02",
+        "tickers": [
+          "SYNTH_EQUITY",
+          "SYNTH_DEFENSIVE",
+          "SYNTH_BOND"
+        ]
+      },
+      "call_id": "scripted-1",
+      "name": "load_market_data",
+      "output": {
+        "ok": true,
+        "result": {
+          "dataset_id": "data_5395687880fe0f0d",
+          "first_date": "2020-01-02",
+          "last_date": "2023-06-14",
+          "price_observations": 900,
+          "price_sha256": "7ef771e0dbce574ba7f5fe8da0ddd5b47ef07a5f5370342f95a673bfd3d83cd3",
+          "provenance_file": "data_5395687880fe0f0d_metadata.json",
+          "provider": "local_synthetic_fixture",
+          "return_observations": 899,
+          "synthetic": true,
+          "tickers": [
+            "SYNTH_EQUITY",
+            "SYNTH_DEFENSIVE",
+            "SYNTH_BOND"
+          ]
+        }
+      },
+      "success": true,
+      "type": "tool_call"
+    },
+    {
+      "arguments": {
+        "confidence": 0.99,
+        "dataset_id": "data_5395687880fe0f0d",
+        "weights": [
+          0.6,
+          0.25,
+          0.15
+        ]
+      },
+      "call_id": "scripted-2",
+      "name": "estimate_risk",
+      "output": {
+        "ok": true,
+        "result": {
+          "annualized_return": 0.033404523905394584,
+          "annualized_volatility": 0.10697758287812148,
+          "artifact": "estimate_risk.json",
+          "asset_mean_daily_returns": [
+            0.00012630770086103464,
+            0.00013639459664079235,
+            0.0002880651318343362
+          ],
+          "assets": [
+            "SYNTH_EQUITY",
+            "SYNTH_DEFENSIVE",
+            "SYNTH_BOND"
+          ],
+          "command": "risk",
+          "data": {
+            "end_date": "2023-06-14",
+            "price_rows": 900,
+            "return_rows": 899,
+            "start_date": "2020-01-02"
+          },
+          "dataset_id": "data_5395687880fe0f0d",
+          "evidence_id": "estimate_risk",
+          "historical_es": 0.019540272660133525,
+          "historical_var": 0.016065237999234497,
+          "mean_daily_return": 0.00015309303945196948,
+          "native_version": "1.0.0",
+          "observations": 899,
+          "sample_covariance": [
+            [
+              0.00011098173285759347,
+              1.4558768668621316e-05,
+              -7.511880923860443e-06
+            ],
+            [
+              1.4558768668621316e-05,
+              3.15390523442236e-05,
+              2.641620609864568e-06
+            ],
+            [
+              -7.511880923860443e-06,
+              2.641620609864568e-06,
+              1.2234521519405064e-05
+            ]
+          ],
+          "schema_version": 1,
+          "settings": {
+            "confidence": 0.99
+          },
+          "total_return": 0.12436919208290519,
+          "volatility_daily": 0.006738954289388352,
+          "weights": [
+            0.6,
+            0.25,
+            0.15
+          ]
+        }
+      },
+      "success": true,
+      "type": "tool_call"
+    },
+    {
+      "arguments": {
+        "confidence": 0.99,
+        "dataset_id": "data_5395687880fe0f0d",
+        "horizon": 1,
+        "paths": 20000,
+        "seed": 42,
+        "weights": [
+          0.6,
+          0.25,
+          0.15
+        ]
+      },
+      "call_id": "scripted-3",
+      "name": "simulate_risk",
+      "output": {
+        "ok": true,
+        "result": {
+          "artifact": "simulate_risk.json",
+          "assets": [
+            "SYNTH_EQUITY",
+            "SYNTH_DEFENSIVE",
+            "SYNTH_BOND"
+          ],
+          "command": "monte-carlo",
+          "covariance_ridge": 1e-12,
+          "data": {
+            "end_date": "2023-06-14",
+            "price_rows": 900,
+            "return_rows": 899,
+            "start_date": "2020-01-02"
+          },
+          "dataset_id": "data_5395687880fe0f0d",
+          "effective_log_covariance": [
+            [
+              0.00011113148716280556,
+              1.4564451946326976e-05,
+              -7.497000991631966e-06
+            ],
+            [
+              1.4564451946326976e-05,
+              3.154321755812664e-05,
+              2.6388372174060518e-06
+            ],
+            [
+              -7.497000991631966e-06,
+              2.6388372174060518e-06,
+              1.2229187971635828e-05
+            ]
+          ],
+          "estimated_log_covariance": [
+            [
+              0.00011113148616280556,
+              1.4564451946326976e-05,
+              -7.497000991631966e-06
+            ],
+            [
+              1.4564451946326976e-05,
+              3.1543216558126635e-05,
+              2.6388372174060518e-06
+            ],
+            [
+              -7.497000991631966e-06,
+              2.6388372174060518e-06,
+              1.2229186971635829e-05
+            ]
+          ],
+          "estimated_log_mean": [
+            7.082644835887869e-05,
+            0.00012063347338941614,
+            0.00028191615677628467
+          ],
+          "evidence_id": "simulate_risk",
+          "generator": "SplitMix64; 52-bit open-interval uniforms; cached Box-Muller",
+          "mean_simulated_return": 0.00011561312226131223,
+          "monte_carlo_es": 0.017649319236185543,
+          "monte_carlo_var": 0.0154030501111064,
+          "native_version": "1.0.0",
+          "schema_version": 1,
+          "settings": {
+            "confidence": 0.99,
+            "horizon": 1,
+            "paths": 20000,
+            "seed": 42
+          },
+          "simulated_return_std": 0.006690353388141654,
+          "weights": [
+            0.6,
+            0.25,
+            0.15
+          ]
+        }
+      },
+      "success": true,
+      "type": "tool_call"
+    },
+    {
+      "arguments": {
+        "confidence": 0.99,
+        "dataset_id": "data_5395687880fe0f0d",
+        "frontier_points": 15,
+        "train_observations": 504,
+        "weights": [
+          0.6,
+          0.25,
+          0.15
+        ]
+      },
+      "call_id": "scripted-4",
+      "name": "optimise_portfolio",
+      "output": {
+        "ok": true,
+        "result": {
+          "artifact": "optimise_portfolio.json",
+          "asset_mean_daily_returns": [
+            -0.0006270608133889314,
+            0.00014492145902240258,
+            0.0003547620229374581
+          ],
+          "assets": [
+            "SYNTH_EQUITY",
+            "SYNTH_DEFENSIVE",
+            "SYNTH_BOND"
+          ],
+          "command": "optimise",
+          "comparison": {
+            "input": {
+              "holdout": {
+                "annualized_return": 0.19154302496121117,
+                "annualized_volatility": 0.09723138466670196,
+                "historical_es": 0.011814313548937189,
+                "historical_var": 0.011121302169661467,
+                "mean_daily_return": 0.0007143638472537693,
+                "observations": 395,
+                "total_return": 0.3161305787516447,
+                "volatility_daily": 0.00612500151091791
+              },
+              "holdout_variance_contributions": {
+                "absolute_daily_variance": [
+                  3.39225026212519e-05,
+                  3.831411501818869e-06,
+                  -2.3827061432406412e-07
+                ],
+                "fractional": [
+                  0.9042228640791655,
+                  0.10212836948740016,
+                  -0.0063512335665656845
+                ]
+              },
+              "training": {
+                "annualized_return": -0.07571697104899924,
+                "annualized_volatility": 0.11364298175835884,
+                "historical_es": 0.021109143083271453,
+                "historical_var": 0.018957470067031322,
+                "mean_daily_return": -0.0002867918198371393,
+                "observations": 504,
+                "total_return": -0.1457008823931635,
+                "volatility_daily": 0.007158834951915887
+              },
+              "training_variance_contributions": {
+                "absolute_daily_variance": [
+                  4.699519397139931e-05,
+                  4.595728670167936e-06,
+                  -3.4200477279474107e-07
+                ],
+                "fractional": [
+                  0.9169987567685772,
+                  0.0896746479981434,
+                  -0.00667340476672064
+                ]
+              },
+              "weights": [
+                0.6,
+                0.25,
+                0.15
+              ]
+            },
+            "minimum_variance": {
+              "holdout": {
+                "annualized_return": 0.07077803759031982,
+                "annualized_volatility": 0.04479175516115874,
+                "historical_es": 0.008054666322296148,
+                "historical_var": 0.006092321371468363,
+                "mean_daily_return": 0.0002753782325949991,
+                "observations": 395,
+                "total_return": 0.11314750453341947,
+                "volatility_daily": 0.002821615355774283
+              },
+              "holdout_variance_contributions": {
+                "absolute_daily_variance": [
+                  5.919350604362986e-07,
+                  1.4585430351306807e-06,
+                  5.911035120374256e-06
+                ],
+                "fractional": [
+                  0.07434956702088677,
+                  0.1831992230082918,
+                  0.7424512099708215
+                ]
+              },
+              "training": {
+                "annualized_return": 0.056628251742596426,
+                "annualized_volatility": 0.04792931622571412,
+                "historical_es": 0.00838900439909307,
+                "historical_var": 0.0073886960411560275,
+                "mean_daily_return": 0.00022315586612792955,
+                "observations": 504,
+                "total_return": 0.11646326238061572,
+                "volatility_daily": 0.0030192631248241067
+              },
+              "training_variance_contributions": {
+                "absolute_daily_variance": [
+                  8.849390809768292e-07,
+                  1.579575961768598e-06,
+                  6.651434774177201e-06
+                ],
+                "fractional": [
+                  0.097075905281318,
+                  0.17327607034829343,
+                  0.7296480243703886
+                ]
+              },
+              "weights": [
+                0.09702535331412887,
+                0.17320030286323693,
+                0.7297743438226342
+              ]
+            }
+          },
+          "data": {
+            "end_date": "2023-06-14",
+            "price_rows": 900,
+            "return_rows": 899,
+            "start_date": "2020-01-02"
+          },
+          "dataset_id": "data_5395687880fe0f0d",
+          "evidence_id": "optimise_portfolio",
+          "frontier": [
+            {
+              "estimated_daily_return": 0.00022315586612793004,
+              "estimated_daily_variance": 9.121669645492621e-06,
+              "target_daily_return": 0.00022315586612792998,
+              "weights": [
+                0.09702535331412883,
+                0.17320030286323687,
+                0.7297743438226343
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00023255630590003913,
+              "estimated_daily_variance": 9.135867759546939e-06,
+              "target_daily_return": 0.00023255630590003913,
+              "weights": [
+                0.0873520247204638,
+                0.1736628213707621,
+                0.7389851539087741
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0002419567456721483,
+              "estimated_daily_variance": 9.178462101709895e-06,
+              "target_daily_return": 0.00024195674567214828,
+              "weights": [
+                0.07767869612679872,
+                0.17412533987828743,
+                0.7481959639949138
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0002513571854442575,
+              "estimated_daily_variance": 9.249452671981485e-06,
+              "target_daily_return": 0.00025135718544425746,
+              "weights": [
+                0.06800536753313362,
+                0.17458785838581262,
+                0.7574067740810537
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0002607576252163666,
+              "estimated_daily_variance": 9.348839470361711e-06,
+              "target_daily_return": 0.0002607576252163666,
+              "weights": [
+                0.05833203893946862,
+                0.17505037689333774,
+                0.7666175841671936
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00027015806498847575,
+              "estimated_daily_variance": 9.476622496850576e-06,
+              "target_daily_return": 0.00027015806498847575,
+              "weights": [
+                0.048658710345803546,
+                0.17551289540086293,
+                0.7758283942533335
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0002795585047605849,
+              "estimated_daily_variance": 9.632801751448076e-06,
+              "target_daily_return": 0.0002795585047605849,
+              "weights": [
+                0.03898538175213853,
+                0.17597541390838795,
+                0.7850392043394735
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0002889589445326941,
+              "estimated_daily_variance": 9.817377234154212e-06,
+              "target_daily_return": 0.00028895894453269405,
+              "weights": [
+                0.02931205315847344,
+                0.17643793241591324,
+                0.7942500144256133
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00029835938430480325,
+              "estimated_daily_variance": 1.0030348944968985e-05,
+              "target_daily_return": 0.0002983593843048032,
+              "weights": [
+                0.01963872456480837,
+                0.17690045092343856,
+                0.803460824511753
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00030775982407691235,
+              "estimated_daily_variance": 1.0271716883892391e-05,
+              "target_daily_return": 0.00030775982407691235,
+              "weights": [
+                0.009965395971143362,
+                0.17736296943096366,
+                0.8126716345978929
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00031716026384902155,
+              "estimated_daily_variance": 1.0541481050924438e-05,
+              "target_daily_return": 0.0003171602638490215,
+              "weights": [
+                0.00029206737747826395,
+                0.17782548793848887,
+                0.8218824446840328
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00032656070362113064,
+              "estimated_daily_variance": 1.0904605989515337e-05,
+              "target_daily_return": 0.00032656070362113064,
+              "weights": [
+                0,
+                0.13439403130723315,
+                0.8656059686927668
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0003359611433932398,
+              "estimated_daily_variance": 1.143420939150514e-05,
+              "target_daily_return": 0.0003359611433932398,
+              "weights": [
+                0,
+                0.08959602087148888,
+                0.9104039791285111
+              ]
+            },
+            {
+              "estimated_daily_return": 0.000345361583165349,
+              "estimated_daily_variance": 1.2130354224913549e-05,
+              "target_daily_return": 0.00034536158316534894,
+              "weights": [
+                0,
+                0.04479801043574427,
+                0.9552019895642557
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0003547620229374581,
+              "estimated_daily_variance": 1.2993040489740547e-05,
+              "target_daily_return": 0.0003547620229374581,
+              "weights": [
+                0,
+                0,
+                1
+              ]
+            }
+          ],
+          "holdout": {
+            "end_date": "2023-06-14",
+            "rows": 395,
+            "start_date": "2021-12-09"
+          },
+          "holdout_uncertainty": [
+            {
+              "block_size": 10,
+              "ci_lower": 0.006393020720028443,
+              "ci_upper": 0.008320568416410904,
+              "estimate": 0.007447640833786972,
+              "metric": "annualized_variance"
+            },
+            {
+              "block_size": 10,
+              "ci_lower": 0.003650914513410961,
+              "ci_upper": 0.00607245826930574,
+              "estimate": 0.005028980798193103,
+              "metric": "historical_var"
+            },
+            {
+              "block_size": 10,
+              "ci_lower": 0.0009161704574421172,
+              "ci_upper": 0.006083564972988162,
+              "estimate": 0.0037596472266410406,
+              "metric": "historical_es"
+            },
+            {
+              "block_size": 20,
+              "ci_lower": 0.006534654558917057,
+              "ci_upper": 0.008237050743664666,
+              "estimate": 0.007447640833786972,
+              "metric": "annualized_variance"
+            },
+            {
+              "block_size": 20,
+              "ci_lower": 0.0038880099565319678,
+              "ci_upper": 0.006123806694577897,
+              "estimate": 0.005028980798193103,
+              "metric": "historical_var"
+            },
+            {
+              "block_size": 20,
+              "ci_lower": 0.0019241202443970066,
+              "ci_upper": 0.006348481001391414,
+              "estimate": 0.0037596472266410406,
+              "metric": "historical_es"
+            }
+          ],
+          "holdout_uncertainty_settings": {
+            "block_sizes": [
+              10,
+              20
+            ],
+            "confidence_level": 0.95,
+            "method": "paired moving-block percentile; fixed allocations; input minus candidate",
+            "repetitions": 1000,
+            "seed": 42
+          },
+          "holdout_uncertainty_skipped_block_sizes": [],
+          "minimum_variance": {
+            "estimated_daily_return": 0.00022315586612792998,
+            "estimated_daily_variance": 9.121669645492621e-06,
+            "target_daily_return": 0.00022315586612792998,
+            "weights": [
+              0.09702535331412887,
+              0.17320030286323693,
+              0.7297743438226342
+            ]
+          },
+          "native_version": "1.0.0",
+          "ridge": 1e-08,
+          "sample_covariance": [
+            [
+              0.00012583670613306998,
+              1.612944032099033e-05,
+              -8.060403162826878e-06
+            ],
+            [
+              1.612944032099033e-05,
+              3.335999233886194e-05,
+              2.435016022413749e-06
+            ],
+            [
+              -8.060403162826878e-06,
+              2.435016022413749e-06,
+              1.2983040489740547e-05
+            ]
+          ],
+          "schema_version": 1,
+          "settings": {
+            "confidence": 0.99,
+            "frontier_points": 15,
+            "train": 504
+          },
+          "training": {
+            "end_date": "2021-12-08",
+            "rows": 504,
+            "start_date": "2020-01-03"
+          },
+          "weights": [
+            0.6,
+            0.25,
+            0.15
+          ]
+        }
+      },
+      "success": true,
+      "type": "tool_call"
+    },
+    {
+      "arguments": {
+        "confidence": 0.99,
+        "dataset_id": "data_5395687880fe0f0d",
+        "weights": [
+          0.6,
+          0.25,
+          0.15
+        ],
+        "window": 250
+      },
+      "call_id": "scripted-5",
+      "name": "backtest_var",
+      "output": {
+        "ok": true,
+        "result": {
+          "artifact": "backtest_var.json",
+          "assets": [
+            "SYNTH_EQUITY",
+            "SYNTH_DEFENSIVE",
+            "SYNTH_BOND"
+          ],
+          "command": "backtest",
+          "data": {
+            "end_date": "2023-06-14",
+            "price_rows": 900,
+            "return_rows": 899,
+            "start_date": "2020-01-02"
+          },
+          "dataset_id": "data_5395687880fe0f0d",
+          "evidence_id": "backtest_var",
+          "forecast_count": 649,
+          "forecast_timing": "Row t loss uses return ending at t; VaR uses exactly the window returns strictly before t.",
+          "kupiec": {
+            "breaches": 10,
+            "expected_breach_rate": 0.010000000000000009,
+            "lr_statistic": 1.6456612129982489,
+            "observations": 649,
+            "observed_breach_rate": 0.015408320493066256,
+            "p_value": 0.19955049344379802
+          },
+          "native_version": "1.0.0",
+          "schema_version": 1,
+          "settings": {
+            "confidence": 0.99,
+            "horizon": 1,
+            "window": 250
+          },
+          "weights": [
+            0.6,
+            0.25,
+            0.15
+          ]
+        }
+      },
+      "success": true,
+      "type": "tool_call"
+    },
+    {
+      "arguments": {
+        "dataset_id": "data_5395687880fe0f0d"
+      },
+      "call_id": "scripted-6",
+      "name": "write_report",
+      "output": {
+        "ok": true,
+        "result": {
+          "dataset_id": "data_5395687880fe0f0d",
+          "evidence_id": "report",
+          "files": [
+            "holdout_uncertainty.csv",
+            "portfolio_report.md",
+            "portfolio_report.pdf",
+            "portfolio_allocation.csv",
+            "risk_estimates.csv",
+            "efficient_frontier.csv",
+            "var_backtest.csv",
+            "figures/efficient_frontier.png",
+            "figures/var_backtest.png"
+          ]
+        }
+      },
+      "success": true,
+      "type": "tool_call"
+    }
+  ],
+  "final_text": "Scripted workflow completed and wrote its report. No language model was called.",
+  "mode": "scripted_workflow",
+  "model": null,
+  "report_written": true,
+  "responses": [],
+  "rounds": 0,
+  "status": "completed",
+  "tool_calls": 6,
+  "transcript": [
+    {
+      "arguments": {
+        "end": "2023-06-15",
+        "source": "fixture",
+        "start": "2020-01-02",
+        "tickers": [
+          "SYNTH_EQUITY",
+          "SYNTH_DEFENSIVE",
+          "SYNTH_BOND"
+        ]
+      },
+      "name": "load_market_data",
+      "output": {
+        "ok": true,
+        "result": {
+          "dataset_id": "data_5395687880fe0f0d",
+          "first_date": "2020-01-02",
+          "last_date": "2023-06-14",
+          "price_observations": 900,
+          "price_sha256": "7ef771e0dbce574ba7f5fe8da0ddd5b47ef07a5f5370342f95a673bfd3d83cd3",
+          "provenance_file": "data_5395687880fe0f0d_metadata.json",
+          "provider": "local_synthetic_fixture",
+          "return_observations": 899,
+          "synthetic": true,
+          "tickers": [
+            "SYNTH_EQUITY",
+            "SYNTH_DEFENSIVE",
+            "SYNTH_BOND"
+          ]
+        }
+      }
+    },
+    {
+      "arguments": {
+        "confidence": 0.99,
+        "dataset_id": "data_5395687880fe0f0d",
+        "weights": [
+          0.6,
+          0.25,
+          0.15
+        ]
+      },
+      "name": "estimate_risk",
+      "output": {
+        "ok": true,
+        "result": {
+          "annualized_return": 0.033404523905394584,
+          "annualized_volatility": 0.10697758287812148,
+          "artifact": "estimate_risk.json",
+          "asset_mean_daily_returns": [
+            0.00012630770086103464,
+            0.00013639459664079235,
+            0.0002880651318343362
+          ],
+          "assets": [
+            "SYNTH_EQUITY",
+            "SYNTH_DEFENSIVE",
+            "SYNTH_BOND"
+          ],
+          "command": "risk",
+          "data": {
+            "end_date": "2023-06-14",
+            "price_rows": 900,
+            "return_rows": 899,
+            "start_date": "2020-01-02"
+          },
+          "dataset_id": "data_5395687880fe0f0d",
+          "evidence_id": "estimate_risk",
+          "historical_es": 0.019540272660133525,
+          "historical_var": 0.016065237999234497,
+          "mean_daily_return": 0.00015309303945196948,
+          "native_version": "1.0.0",
+          "observations": 899,
+          "sample_covariance": [
+            [
+              0.00011098173285759347,
+              1.4558768668621316e-05,
+              -7.511880923860443e-06
+            ],
+            [
+              1.4558768668621316e-05,
+              3.15390523442236e-05,
+              2.641620609864568e-06
+            ],
+            [
+              -7.511880923860443e-06,
+              2.641620609864568e-06,
+              1.2234521519405064e-05
+            ]
+          ],
+          "schema_version": 1,
+          "settings": {
+            "confidence": 0.99
+          },
+          "total_return": 0.12436919208290519,
+          "volatility_daily": 0.006738954289388352,
+          "weights": [
+            0.6,
+            0.25,
+            0.15
+          ]
+        }
+      }
+    },
+    {
+      "arguments": {
+        "confidence": 0.99,
+        "dataset_id": "data_5395687880fe0f0d",
+        "horizon": 1,
+        "paths": 20000,
+        "seed": 42,
+        "weights": [
+          0.6,
+          0.25,
+          0.15
+        ]
+      },
+      "name": "simulate_risk",
+      "output": {
+        "ok": true,
+        "result": {
+          "artifact": "simulate_risk.json",
+          "assets": [
+            "SYNTH_EQUITY",
+            "SYNTH_DEFENSIVE",
+            "SYNTH_BOND"
+          ],
+          "command": "monte-carlo",
+          "covariance_ridge": 1e-12,
+          "data": {
+            "end_date": "2023-06-14",
+            "price_rows": 900,
+            "return_rows": 899,
+            "start_date": "2020-01-02"
+          },
+          "dataset_id": "data_5395687880fe0f0d",
+          "effective_log_covariance": [
+            [
+              0.00011113148716280556,
+              1.4564451946326976e-05,
+              -7.497000991631966e-06
+            ],
+            [
+              1.4564451946326976e-05,
+              3.154321755812664e-05,
+              2.6388372174060518e-06
+            ],
+            [
+              -7.497000991631966e-06,
+              2.6388372174060518e-06,
+              1.2229187971635828e-05
+            ]
+          ],
+          "estimated_log_covariance": [
+            [
+              0.00011113148616280556,
+              1.4564451946326976e-05,
+              -7.497000991631966e-06
+            ],
+            [
+              1.4564451946326976e-05,
+              3.1543216558126635e-05,
+              2.6388372174060518e-06
+            ],
+            [
+              -7.497000991631966e-06,
+              2.6388372174060518e-06,
+              1.2229186971635829e-05
+            ]
+          ],
+          "estimated_log_mean": [
+            7.082644835887869e-05,
+            0.00012063347338941614,
+            0.00028191615677628467
+          ],
+          "evidence_id": "simulate_risk",
+          "generator": "SplitMix64; 52-bit open-interval uniforms; cached Box-Muller",
+          "mean_simulated_return": 0.00011561312226131223,
+          "monte_carlo_es": 0.017649319236185543,
+          "monte_carlo_var": 0.0154030501111064,
+          "native_version": "1.0.0",
+          "schema_version": 1,
+          "settings": {
+            "confidence": 0.99,
+            "horizon": 1,
+            "paths": 20000,
+            "seed": 42
+          },
+          "simulated_return_std": 0.006690353388141654,
+          "weights": [
+            0.6,
+            0.25,
+            0.15
+          ]
+        }
+      }
+    },
+    {
+      "arguments": {
+        "confidence": 0.99,
+        "dataset_id": "data_5395687880fe0f0d",
+        "frontier_points": 15,
+        "train_observations": 504,
+        "weights": [
+          0.6,
+          0.25,
+          0.15
+        ]
+      },
+      "name": "optimise_portfolio",
+      "output": {
+        "ok": true,
+        "result": {
+          "artifact": "optimise_portfolio.json",
+          "asset_mean_daily_returns": [
+            -0.0006270608133889314,
+            0.00014492145902240258,
+            0.0003547620229374581
+          ],
+          "assets": [
+            "SYNTH_EQUITY",
+            "SYNTH_DEFENSIVE",
+            "SYNTH_BOND"
+          ],
+          "command": "optimise",
+          "comparison": {
+            "input": {
+              "holdout": {
+                "annualized_return": 0.19154302496121117,
+                "annualized_volatility": 0.09723138466670196,
+                "historical_es": 0.011814313548937189,
+                "historical_var": 0.011121302169661467,
+                "mean_daily_return": 0.0007143638472537693,
+                "observations": 395,
+                "total_return": 0.3161305787516447,
+                "volatility_daily": 0.00612500151091791
+              },
+              "holdout_variance_contributions": {
+                "absolute_daily_variance": [
+                  3.39225026212519e-05,
+                  3.831411501818869e-06,
+                  -2.3827061432406412e-07
+                ],
+                "fractional": [
+                  0.9042228640791655,
+                  0.10212836948740016,
+                  -0.0063512335665656845
+                ]
+              },
+              "training": {
+                "annualized_return": -0.07571697104899924,
+                "annualized_volatility": 0.11364298175835884,
+                "historical_es": 0.021109143083271453,
+                "historical_var": 0.018957470067031322,
+                "mean_daily_return": -0.0002867918198371393,
+                "observations": 504,
+                "total_return": -0.1457008823931635,
+                "volatility_daily": 0.007158834951915887
+              },
+              "training_variance_contributions": {
+                "absolute_daily_variance": [
+                  4.699519397139931e-05,
+                  4.595728670167936e-06,
+                  -3.4200477279474107e-07
+                ],
+                "fractional": [
+                  0.9169987567685772,
+                  0.0896746479981434,
+                  -0.00667340476672064
+                ]
+              },
+              "weights": [
+                0.6,
+                0.25,
+                0.15
+              ]
+            },
+            "minimum_variance": {
+              "holdout": {
+                "annualized_return": 0.07077803759031982,
+                "annualized_volatility": 0.04479175516115874,
+                "historical_es": 0.008054666322296148,
+                "historical_var": 0.006092321371468363,
+                "mean_daily_return": 0.0002753782325949991,
+                "observations": 395,
+                "total_return": 0.11314750453341947,
+                "volatility_daily": 0.002821615355774283
+              },
+              "holdout_variance_contributions": {
+                "absolute_daily_variance": [
+                  5.919350604362986e-07,
+                  1.4585430351306807e-06,
+                  5.911035120374256e-06
+                ],
+                "fractional": [
+                  0.07434956702088677,
+                  0.1831992230082918,
+                  0.7424512099708215
+                ]
+              },
+              "training": {
+                "annualized_return": 0.056628251742596426,
+                "annualized_volatility": 0.04792931622571412,
+                "historical_es": 0.00838900439909307,
+                "historical_var": 0.0073886960411560275,
+                "mean_daily_return": 0.00022315586612792955,
+                "observations": 504,
+                "total_return": 0.11646326238061572,
+                "volatility_daily": 0.0030192631248241067
+              },
+              "training_variance_contributions": {
+                "absolute_daily_variance": [
+                  8.849390809768292e-07,
+                  1.579575961768598e-06,
+                  6.651434774177201e-06
+                ],
+                "fractional": [
+                  0.097075905281318,
+                  0.17327607034829343,
+                  0.7296480243703886
+                ]
+              },
+              "weights": [
+                0.09702535331412887,
+                0.17320030286323693,
+                0.7297743438226342
+              ]
+            }
+          },
+          "data": {
+            "end_date": "2023-06-14",
+            "price_rows": 900,
+            "return_rows": 899,
+            "start_date": "2020-01-02"
+          },
+          "dataset_id": "data_5395687880fe0f0d",
+          "evidence_id": "optimise_portfolio",
+          "frontier": [
+            {
+              "estimated_daily_return": 0.00022315586612793004,
+              "estimated_daily_variance": 9.121669645492621e-06,
+              "target_daily_return": 0.00022315586612792998,
+              "weights": [
+                0.09702535331412883,
+                0.17320030286323687,
+                0.7297743438226343
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00023255630590003913,
+              "estimated_daily_variance": 9.135867759546939e-06,
+              "target_daily_return": 0.00023255630590003913,
+              "weights": [
+                0.0873520247204638,
+                0.1736628213707621,
+                0.7389851539087741
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0002419567456721483,
+              "estimated_daily_variance": 9.178462101709895e-06,
+              "target_daily_return": 0.00024195674567214828,
+              "weights": [
+                0.07767869612679872,
+                0.17412533987828743,
+                0.7481959639949138
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0002513571854442575,
+              "estimated_daily_variance": 9.249452671981485e-06,
+              "target_daily_return": 0.00025135718544425746,
+              "weights": [
+                0.06800536753313362,
+                0.17458785838581262,
+                0.7574067740810537
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0002607576252163666,
+              "estimated_daily_variance": 9.348839470361711e-06,
+              "target_daily_return": 0.0002607576252163666,
+              "weights": [
+                0.05833203893946862,
+                0.17505037689333774,
+                0.7666175841671936
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00027015806498847575,
+              "estimated_daily_variance": 9.476622496850576e-06,
+              "target_daily_return": 0.00027015806498847575,
+              "weights": [
+                0.048658710345803546,
+                0.17551289540086293,
+                0.7758283942533335
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0002795585047605849,
+              "estimated_daily_variance": 9.632801751448076e-06,
+              "target_daily_return": 0.0002795585047605849,
+              "weights": [
+                0.03898538175213853,
+                0.17597541390838795,
+                0.7850392043394735
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0002889589445326941,
+              "estimated_daily_variance": 9.817377234154212e-06,
+              "target_daily_return": 0.00028895894453269405,
+              "weights": [
+                0.02931205315847344,
+                0.17643793241591324,
+                0.7942500144256133
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00029835938430480325,
+              "estimated_daily_variance": 1.0030348944968985e-05,
+              "target_daily_return": 0.0002983593843048032,
+              "weights": [
+                0.01963872456480837,
+                0.17690045092343856,
+                0.803460824511753
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00030775982407691235,
+              "estimated_daily_variance": 1.0271716883892391e-05,
+              "target_daily_return": 0.00030775982407691235,
+              "weights": [
+                0.009965395971143362,
+                0.17736296943096366,
+                0.8126716345978929
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00031716026384902155,
+              "estimated_daily_variance": 1.0541481050924438e-05,
+              "target_daily_return": 0.0003171602638490215,
+              "weights": [
+                0.00029206737747826395,
+                0.17782548793848887,
+                0.8218824446840328
+              ]
+            },
+            {
+              "estimated_daily_return": 0.00032656070362113064,
+              "estimated_daily_variance": 1.0904605989515337e-05,
+              "target_daily_return": 0.00032656070362113064,
+              "weights": [
+                0,
+                0.13439403130723315,
+                0.8656059686927668
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0003359611433932398,
+              "estimated_daily_variance": 1.143420939150514e-05,
+              "target_daily_return": 0.0003359611433932398,
+              "weights": [
+                0,
+                0.08959602087148888,
+                0.9104039791285111
+              ]
+            },
+            {
+              "estimated_daily_return": 0.000345361583165349,
+              "estimated_daily_variance": 1.2130354224913549e-05,
+              "target_daily_return": 0.00034536158316534894,
+              "weights": [
+                0,
+                0.04479801043574427,
+                0.9552019895642557
+              ]
+            },
+            {
+              "estimated_daily_return": 0.0003547620229374581,
+              "estimated_daily_variance": 1.2993040489740547e-05,
+              "target_daily_return": 0.0003547620229374581,
+              "weights": [
+                0,
+                0,
+                1
+              ]
+            }
+          ],
+          "holdout": {
+            "end_date": "2023-06-14",
+            "rows": 395,
+            "start_date": "2021-12-09"
+          },
+          "holdout_uncertainty": [
+            {
+              "block_size": 10,
+              "ci_lower": 0.006393020720028443,
+              "ci_upper": 0.008320568416410904,
+              "estimate": 0.007447640833786972,
+              "metric": "annualized_variance"
+            },
+            {
+              "block_size": 10,
+              "ci_lower": 0.003650914513410961,
+              "ci_upper": 0.00607245826930574,
+              "estimate": 0.005028980798193103,
+              "metric": "historical_var"
+            },
+            {
+              "block_size": 10,
+              "ci_lower": 0.0009161704574421172,
+              "ci_upper": 0.006083564972988162,
+              "estimate": 0.0037596472266410406,
+              "metric": "historical_es"
+            },
+            {
+              "block_size": 20,
+              "ci_lower": 0.006534654558917057,
+              "ci_upper": 0.008237050743664666,
+              "estimate": 0.007447640833786972,
+              "metric": "annualized_variance"
+            },
+            {
+              "block_size": 20,
+              "ci_lower": 0.0038880099565319678,
+              "ci_upper": 0.006123806694577897,
+              "estimate": 0.005028980798193103,
+              "metric": "historical_var"
+            },
+            {
+              "block_size": 20,
+              "ci_lower": 0.0019241202443970066,
+              "ci_upper": 0.006348481001391414,
+              "estimate": 0.0037596472266410406,
+              "metric": "historical_es"
+            }
+          ],
+          "holdout_uncertainty_settings": {
+            "block_sizes": [
+              10,
+              20
+            ],
+            "confidence_level": 0.95,
+            "method": "paired moving-block percentile; fixed allocations; input minus candidate",
+            "repetitions": 1000,
+            "seed": 42
+          },
+          "holdout_uncertainty_skipped_block_sizes": [],
+          "minimum_variance": {
+            "estimated_daily_return": 0.00022315586612792998,
+            "estimated_daily_variance": 9.121669645492621e-06,
+            "target_daily_return": 0.00022315586612792998,
+            "weights": [
+              0.09702535331412887,
+              0.17320030286323693,
+              0.7297743438226342
+            ]
+          },
+          "native_version": "1.0.0",
+          "ridge": 1e-08,
+          "sample_covariance": [
+            [
+              0.00012583670613306998,
+              1.612944032099033e-05,
+              -8.060403162826878e-06
+            ],
+            [
+              1.612944032099033e-05,
+              3.335999233886194e-05,
+              2.435016022413749e-06
+            ],
+            [
+              -8.060403162826878e-06,
+              2.435016022413749e-06,
+              1.2983040489740547e-05
+            ]
+          ],
+          "schema_version": 1,
+          "settings": {
+            "confidence": 0.99,
+            "frontier_points": 15,
+            "train": 504
+          },
+          "training": {
+            "end_date": "2021-12-08",
+            "rows": 504,
+            "start_date": "2020-01-03"
+          },
+          "weights": [
+            0.6,
+            0.25,
+            0.15
+          ]
+        }
+      }
+    },
+    {
+      "arguments": {
+        "confidence": 0.99,
+        "dataset_id": "data_5395687880fe0f0d",
+        "weights": [
+          0.6,
+          0.25,
+          0.15
+        ],
+        "window": 250
+      },
+      "name": "backtest_var",
+      "output": {
+        "ok": true,
+        "result": {
+          "artifact": "backtest_var.json",
+          "assets": [
+            "SYNTH_EQUITY",
+            "SYNTH_DEFENSIVE",
+            "SYNTH_BOND"
+          ],
+          "command": "backtest",
+          "data": {
+            "end_date": "2023-06-14",
+            "price_rows": 900,
+            "return_rows": 899,
+            "start_date": "2020-01-02"
+          },
+          "dataset_id": "data_5395687880fe0f0d",
+          "evidence_id": "backtest_var",
+          "forecast_count": 649,
+          "forecast_timing": "Row t loss uses return ending at t; VaR uses exactly the window returns strictly before t.",
+          "kupiec": {
+            "breaches": 10,
+            "expected_breach_rate": 0.010000000000000009,
+            "lr_statistic": 1.6456612129982489,
+            "observations": 649,
+            "observed_breach_rate": 0.015408320493066256,
+            "p_value": 0.19955049344379802
+          },
+          "native_version": "1.0.0",
+          "schema_version": 1,
+          "settings": {
+            "confidence": 0.99,
+            "horizon": 1,
+            "window": 250
+          },
+          "weights": [
+            0.6,
+            0.25,
+            0.15
+          ]
+        }
+      }
+    },
+    {
+      "arguments": {
+        "dataset_id": "data_5395687880fe0f0d"
+      },
+      "name": "write_report",
+      "output": {
+        "ok": true,
+        "result": {
+          "dataset_id": "data_5395687880fe0f0d",
+          "evidence_id": "report",
+          "files": [
+            "holdout_uncertainty.csv",
+            "portfolio_report.md",
+            "portfolio_report.pdf",
+            "portfolio_allocation.csv",
+            "risk_estimates.csv",
+            "efficient_frontier.csv",
+            "var_backtest.csv",
+            "figures/efficient_frontier.png",
+            "figures/var_backtest.png"
+          ]
+        }
+      }
+    }
+  ],
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  }
+}

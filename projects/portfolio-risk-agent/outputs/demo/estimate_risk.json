@@ -1,0 +1,54 @@
+{
+  "annualized_return": 0.033404523905394584,
+  "annualized_volatility": 0.10697758287812148,
+  "asset_mean_daily_returns": [
+    0.00012630770086103464,
+    0.00013639459664079235,
+    0.0002880651318343362
+  ],
+  "assets": [
+    "SYNTH_EQUITY",
+    "SYNTH_DEFENSIVE",
+    "SYNTH_BOND"
+  ],
+  "command": "risk",
+  "data": {
+    "end_date": "2023-06-14",
+    "price_rows": 900,
+    "return_rows": 899,
+    "start_date": "2020-01-02"
+  },
+  "historical_es": 0.019540272660133525,
+  "historical_var": 0.016065237999234497,
+  "mean_daily_return": 0.00015309303945196948,
+  "native_version": "1.0.0",
+  "observations": 899,
+  "sample_covariance": [
+    [
+      0.00011098173285759347,
+      1.4558768668621316e-05,
+      -7.511880923860443e-06
+    ],
+    [
+      1.4558768668621316e-05,
+      3.15390523442236e-05,
+      2.641620609864568e-06
+    ],
+    [
+      -7.511880923860443e-06,
+      2.641620609864568e-06,
+      1.2234521519405064e-05
+    ]
+  ],
+  "schema_version": 1,
+  "settings": {
+    "confidence": 0.99
+  },
+  "total_return": 0.12436919208290519,
+  "volatility_daily": 0.006738954289388352,
+  "weights": [
+    0.6,
+    0.25,
+    0.15
+  ]
+}

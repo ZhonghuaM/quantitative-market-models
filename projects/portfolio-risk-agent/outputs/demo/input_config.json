@@ -1,0 +1,23 @@
+{
+  "confidence": 0.99,
+  "end": "2023-06-15",
+  "frontier_points": 15,
+  "horizon": 1,
+  "paths": 20000,
+  "portfolio_value": 1000000.0,
+  "seed": 42,
+  "source": "fixture",
+  "start": "2020-01-02",
+  "tickers": [
+    "SYNTH_EQUITY",
+    "SYNTH_DEFENSIVE",
+    "SYNTH_BOND"
+  ],
+  "train_observations": 504,
+  "weights": [
+    0.6,
+    0.25,
+    0.15
+  ],
+  "window": 250
+}

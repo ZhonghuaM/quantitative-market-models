@@ -1,6 +1,17 @@
 # quantitative-market-models
 
-**Daily financial forecasts, from chronological prediction to execution assumptions.**
+**Reproducible quantitative finance: from data and numerical models to evidence.**
+
+Two separately runnable projects share one principle: every claim should connect to explicit assumptions, stored results and a checkable calculation.
+
+| Project | Research question | Main implementation | Start here |
+|---|---|---|---|
+| Daily signal study | Do daily forecasts survive chronological evaluation, execution delay and costs? | Python | [Study and results below](#daily-signal-study) |
+| Portfolio risk agent | Can tool-orchestrated risk and allocation reports remain numerically correct and auditable? | C/C++ engine; Python orchestration; Python/R references | [Project guide](projects/portfolio-risk-agent/README.md) |
+
+The projects have separate entry points, datasets, dependencies and reports. The agent does not trade the signal strategy or turn its exploratory backtest into an investment recommendation.
+
+## Daily signal study
 
 This scientific-Python study asks whether simple daily price-and-volume features improve direction forecasts over baselines, and whether any apparent trading value survives delayed execution and transaction costs.
 
